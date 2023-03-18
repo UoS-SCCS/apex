@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="columns">
+  <div class="column is-one-fifth has-text-left">
+    <aside class="menu">
+      <p class="menu-label">
+        Storage
+      </p>
+      <ul id="root-files" class="menu-list">
+        
+      </ul>
+      
+    </aside>
+    
+  </div>
+  <div class="column">
+    <nav class="breadcrumb" aria-label="breadcrumbs">
+      <ul>
+        <li><a href="#">Bulma</a></li>
+        <li><a href="#">Documentation</a></li>
+        <li><a href="#">Components</a></li>
+        <li class="is-active"><a href="#" aria-current="page">Breadcrumb</a></li>
+      </ul>
+    </nav>
+    <nav class="panel" id="filesPanel">
+      
+      <a class="panel-block is-active">
+        <span class="panel-icon">
+          <i class="fas fa-book" aria-hidden="true"></i>
+        </span>
+        bulma
+      </a>
+      <a class="panel-block">
+        <span class="panel-icon">
+          <i class="fas fa-book" aria-hidden="true"></i>
+        </span>
+        marksheet
+      </a>
+      <a class="panel-block">
+        <span class="panel-icon">
+          <i class="fas fa-book" aria-hidden="true"></i>
+        </span>
+        minireset.css
+      </a>
+      <a class="panel-block">
+        <span class="panel-icon">
+          <i class="fas fa-book" aria-hidden="true"></i>
+        </span>
+        jgthms.github.io
+      </a>
+      <a class="panel-block">
+        <span class="panel-icon">
+          <i class="fas fa-code-branch" aria-hidden="true"></i>
+        </span>
+        daniellowtw/infboard
+      </a>
+      <a class="panel-block">
+        <span class="panel-icon">
+          <i class="fas fa-code-branch" aria-hidden="true"></i>
+        </span>
+        mojs
+      </a>
+
+    </nav>
+  </div>
+  
+</div>
+
+
+<input type="file" name="file" id="file" onchange="uploadFile()" hidden>
+<input type="hidden" name="user_id" id="user_id" value="{{ id }}">
+<button class="button" onclick="getList()">Get List</button>
+<button class="button" onclick="createDirectory()">Create Directory</button>
+<button class="button" onclick="showFileDialog()">Upload File</button>
+{% endblock %}

@@ -1,0 +1,6 @@
+.collapsible {
+    display:none;
+}
+.showing {
+    display:block!important;
+}
