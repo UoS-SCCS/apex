@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_restful import Api
 
+
 import os
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
@@ -36,6 +37,13 @@ def create_app():
 
     db.init_app(app)
 
+    from .oauth import config_oauth
+    config_oauth(app)
+    from .oauth import oauth as oauth_blueprint
+    
+    app.register_blueprint(oauth_blueprint)
+
+
     # blueprint for auth routes in our app
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint)
@@ -51,6 +59,11 @@ def create_app():
     
     app.register_blueprint(api_blueprint, url_prefix="/api/v1")
 
+
+
+
+
+
     if not os.path.exists("_db.created"):
         
         with app.app_context():
@@ -61,3 +74,4 @@ def create_app():
     
 
     return app
+

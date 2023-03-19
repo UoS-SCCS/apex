@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
 from flask_login import login_user, login_required, logout_user
+from werkzeug.urls import url_quote
 from . import db
 
 auth = Blueprint('auth', __name__)
@@ -15,7 +16,9 @@ def logout():
 
 @auth.route('/login')
 def login():
-    return render_template('login.html')
+    next = request.args.get("next", default="", type=str)
+    print("login:" + url_quote(next))
+    return render_template('login.html',next=url_quote(next))
 
 @auth.route('/login', methods=['POST'])
 def login_post():
@@ -23,7 +26,7 @@ def login_post():
     email = request.form.get('email')
     password = request.form.get('password')
     remember = True if request.form.get('remember') else False
-
+    next = request.args.get("next", default="", type=str)
     user = User.query.filter_by(email=email).first()
 
     # check if the user actually exists
@@ -34,7 +37,11 @@ def login_post():
 
     # if the above check passes, then we know the user has the right credentials
     login_user(user, remember=remember)
-    return redirect(url_for('main.profile'))
+    if next != "":
+        print(next)
+        return redirect(next)
+    else:
+        return redirect(url_for('main.profile'))
 
 @auth.route('/signup')
 def signup():
