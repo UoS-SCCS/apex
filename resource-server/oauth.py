@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import Client, Token, User, AuthorizationCode
 from werkzeug.security import gen_salt
@@ -8,6 +8,24 @@ from flask_login import login_required, current_user
 from . import db
 import time
 from authlib.oauth2.rfc6749 import grants
+
+from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
+from authlib.oauth2.rfc6750 import BearerTokenValidator
+
+class MyBearerTokenValidator(BearerTokenValidator):
+    def authenticate_token(self, token_string):
+        print("TokenString:" + token_string)
+        
+        return Token.query.filter_by(access_token=token_string).first()
+
+require_oauth = ResourceProtector()
+
+# only bearer token is supported currently
+require_oauth.register_token_validator(MyBearerTokenValidator())
+
+
+
+
 oauth = Blueprint('oauth', __name__)
 
 
@@ -64,6 +82,10 @@ def config_oauth(app):
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
 
+@oauth.route("/test/")
+@require_oauth()
+def test():
+    return jsonify({"success":True})
 @oauth.route('/developer/')
 def index():
     if current_user:

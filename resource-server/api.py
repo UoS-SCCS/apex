@@ -1,6 +1,7 @@
+from types import NoneType
 from flask import Blueprint, render_template, redirect, url_for, request, flash,send_file,jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User
+from .models import User, Token
 from flask_login import login_user, login_required, logout_user
 from . import db
 from . import USER_FILES_PATH
@@ -11,10 +12,25 @@ from functools import wraps
 from flask_login import login_required, current_user
 from flask import current_app, request, g
 from flask_restful import abort
+from flask_login.config import EXEMPT_METHODS
 from pathvalidate import sanitize_filepath
 from werkzeug.datastructures import FileStorage
 
 import os
+from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
+from authlib.oauth2.rfc6750 import BearerTokenValidator
+
+class MyBearerTokenValidator(BearerTokenValidator):
+    def authenticate_token(self, token_string):
+        print("TokenString:" + token_string)
+        
+        return Token.query.filter_by(access_token=token_string).first()
+
+require_oauth = ResourceProtector()
+
+# only bearer token is supported currently
+require_oauth.register_token_validator(MyBearerTokenValidator())
+
 def validate_user(f):
     '''
     This decorate ensures that the user logged in is the actually the same user we're operating on
@@ -22,10 +38,38 @@ def validate_user(f):
     @wraps(f)
     def func(*args, **kwargs):
         user_id = kwargs.get('user_id')
-        if user_id != current_user.get_id():
+        if (not isinstance(current_token,NoneType) and user_id == str(current_token.user_id)) or user_id == current_user.get_id():
+            pass
+        else:
+            #if user_id != current_user.get_id():
             abort(404, message="You do not have permission to the resource you are trying to access")
         return f(*args, **kwargs)
     return func
+
+def authenticate_user(scopes=None, optional=False):
+    def inner_authenticate_user(f):
+        '''
+        This decorate ensures that the user logged in is the actually the same user we're operating on
+        '''
+        @wraps(f)
+        def func(*args, **kwargs):
+            if current_user.is_authenticated or request.method in EXEMPT_METHODS or current_app.config.get("LOGIN_DISABLED"):
+                
+                # flask 1.x compatibility
+                # current_app.ensure_sync is only available in Flask >= 2.0
+                if callable(getattr(current_app, "ensure_sync", None)):
+                    return current_app.ensure_sync(f)(*args, **kwargs)
+                return f(*args, **kwargs)    
+            else:
+                print("here")
+                deco = require_oauth(scopes,optional)(lambda: f(*args, **kwargs))
+                return deco()
+                
+        return func
+    return inner_authenticate_user
+
+
+
 
 api = Blueprint('api', __name__)
 
@@ -39,13 +83,15 @@ def path_to_dict(path):
     return d
 
 class Files(Resource):
+
     def _sanitize_path(self,filepath):
         return sanitize_filepath(filepath)
 
     def _validate_path(self,user_dir, filepath):
         return os.path.commonprefix([user_dir, os.path.realpath(filepath)])
     
-    @login_required
+
+    @authenticate_user()
     @validate_user
     def get(self, user_id, unsafe_filename=None):
         try:
@@ -77,7 +123,7 @@ class Files(Resource):
                 ),
             )
 
-    @login_required
+    @authenticate_user()
     @validate_user
     def post(self, user_id, unsafe_filename):
         try:
@@ -111,7 +157,7 @@ class Files(Resource):
                     e
                 ),
             )
-    @login_required
+    @authenticate_user()
     @validate_user
     def put(self, user_id, unsafe_filename):
         try:
@@ -145,7 +191,7 @@ class Files(Resource):
                 ),
             )
 
-    @login_required
+    @authenticate_user()
     @validate_user
     def delete(self, user_id, unsafe_filename):
         try:
