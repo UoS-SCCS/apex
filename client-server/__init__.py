@@ -5,13 +5,27 @@ from flask_login import LoginManager
 import os
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
-
+DB_PATH = ""
+USER_FILES_PATH = ""
 def create_app():
     app = Flask(__name__)
+    app.config["MYDRIVE_CLIENT_ID"]="LhtuzZbcdjNFLr0VT7GrDc6G"
+    app.config["MYDRIVE_CLIENT_SECRET"]="E62Jh9ITGyTYpYTpkmYabT38kKcWj4RtHOEoouFagX4FU5Rc"
+    #app.config["MYDRIVE_REQUEST_TOKEN_URL"]="http://localhost:5000/oauth/token"
+    app.config["MYDRIVE_ACCESS_TOKEN_URL"]="http://localhost:5000/oauth/token"
+    app.config["MYDRIVE_AUTHORIZE_URL"]="http://localhost:5000/oauth/authorize"
+    app.config["MYDRIVE_ACCESS_TOKEN_PARAMS"]= {"grant_type":"authorization_code"}
+    app.config["MYDRIVE_CLIENT_KWARGS"]={'scope': 'full'}
+    app.config["MYDRIVE_API_BASE_URL"]="http://localhost:5000/api/v1/users/"
+
+    #NoteTaker
 
     app.config['SECRET_KEY'] = 'rRiuFv1DIS/m0QX4OjTmjVq8sl5kAnJge1cWrvvyhm4='
     with app.app_context():
         DB_PATH=os.path.join(app.root_path, "data")
+        if not os.path.exists(DB_PATH):
+            os.makedirs(DB_PATH)
+        
         
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + DB_PATH + '/db.sqlite'
     
@@ -35,6 +49,16 @@ def create_app():
     # blueprint for non-auth parts of app
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
+
+    from .oauth_client import config_oauth_client
+    config_oauth_client(app)
+
+    # blueprint for auth routes in our app
+    from .oauth_client import oauth_client as oauth_client_blueprint
+    app.register_blueprint(oauth_client_blueprint)
+
+    from .notes import notes as notes_blueprint
+    app.register_blueprint(notes_blueprint)
 
     if not os.path.exists("_db.created"):
         

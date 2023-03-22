@@ -11,6 +11,8 @@ flask-sqlalchemy = "*"
 python-dotenv = "*"
 flask-restful = "*"
 pathvalidate = "*"
+requests = "*"
+requests-oauthlib = "*"
 
 [dev-packages]
 

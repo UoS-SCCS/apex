@@ -13,6 +13,7 @@ from flask_login import login_required, current_user
 from flask import current_app, request, g
 from flask_restful import abort
 from flask_login.config import EXEMPT_METHODS
+from werkzeug.exceptions import HTTPException
 from pathvalidate import sanitize_filepath
 from werkzeug.datastructures import FileStorage
 
@@ -95,9 +96,10 @@ class Files(Resource):
     @validate_user
     def get(self, user_id, unsafe_filename=None):
         try:
+            #print("Unsafe:" + unsafe_filename)
             if unsafe_filename is None:
                 print("None filename")
-            unsafe_filename = ""
+            #unsafe_filename = ""
             print("UserFiles:" + USER_FILES_PATH)
             user_dir = os.path.join(USER_FILES_PATH,user_id)
             print(user_dir)
@@ -111,10 +113,12 @@ class Files(Resource):
                 os.makedirs(user_dir)
             if os.path.exists(target):
                 if os.path.isdir(target):
-                    return path_to_dict(os.path.join(USER_FILES_PATH,user_id))
+                    return path_to_dict(target)
                 else:
                     return send_file(target)
-            raise Exception("File path not found")
+            abort(404)
+        except HTTPException as e1:
+            raise
         except Exception as e:
             abort(
                 500,
@@ -134,13 +138,14 @@ class Files(Resource):
             
             target = os.path.join(user_dir,filepath)
             parser = reqparse.RequestParser()
-            
+            print("Target:" + target)
             if os.path.exists(target):
-                abort(400,"Path already exists, use PUT instead of POST")
+                return "Path already exists, use PUT instead of POST", 400
             print(target)
             parser.add_argument('file', type=FileStorage, location='files',default=None)
             
             args = parser.parse_args()
+            print(args)
             if not args['file'] is None:
                 file = args['file']    
                 file.save(target)

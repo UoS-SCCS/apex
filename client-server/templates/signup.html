@@ -1,37 +1,58 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="column is-4 is-offset-4">
-    <h3 class="title">Sign Up</h3>
-    <div class="box">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="notification is-danger">
-                {{ messages[0] }}. Go to <a href="{{ url_for('auth.login') }}">login page</a>.
-            </div>
-        {% endif %}
-        {% endwith %}
-        <form method="POST" action="/signup">
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="email" name="email" placeholder="Email" autofocus="">
+<div class="valign-wrapper" style="flex:1; justify-content: center;">
+    <div class="card blue-grey lighten-4">
+        <div class="card-content ">
+            <span class="card-title">Sign Up</span>
+            <div class="box">
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                <div class="notification is-danger">
+                    {{ messages[0] }}
                 </div>
-            </div>
+                {% endif %}
+                {% endwith %}
+                <form method="POST" class="col s12" action="/signup">
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <i class="material-icons prefix">user</i>
+                            <input id="name" name="name" type="text" class="validate" autofocus>
+                            <label for="name">Name</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <i class="material-icons prefix">email</i>
+                            <input id="email" name="email" type="email" class="validate">
+                            <label for="email">Email Address</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <i class="material-icons prefix">lock</i>
+                            <input class="validate" type="password" name="password" id="password">
+                            <label for="password">Password</label>
+                        </div>
+                    </div>
+                    <div class="row">
 
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="text" name="name" placeholder="Name" autofocus="">
-                </div>
-            </div>
 
-            <div class="field">
-                <div class="control">
-                    <input class="input is-large" type="password" name="password" placeholder="Password">
-                </div>
-            </div>
+                        <p class="center-align">
+                            <label>
+                                <input type="checkbox" name="remember" />
+                                <span>Remember me</span>
+                            </label>
+                        </p>
 
-            <button class="button is-block is-info is-large is-fullwidth">Sign Up</button>
-        </form>
+                    </div>
+                    <p class="center-align">
+                        <button class="waves-effect waves-light btn">Sign Up</button>
+                    </p>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
+
 {% endblock %}

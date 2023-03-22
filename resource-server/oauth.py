@@ -82,6 +82,11 @@ def config_oauth(app):
 def split_by_crlf(s):
     return [v for v in s.splitlines() if v]
 
+@oauth.route("/profile/")
+@require_oauth()
+def get_client_id():
+    return jsonify({"user_id":current_token.user_id})
+
 @oauth.route("/test/")
 @require_oauth()
 def test():

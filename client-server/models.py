@@ -6,3 +6,24 @@ class User(UserMixin,db.Model):
     email = db.Column(db.String(100), unique=True)
     password = db.Column(db.String(100))
     name = db.Column(db.String(1000))
+    is_linked = db.Column(db.Boolean)
+    oauth_uid = db.Column(db.Integer)
+
+class OAuth2Token(db.Model):
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'),primary_key=True)
+    token_type = db.Column(db.String(length=40))
+    access_token = db.Column(db.String(length=200))
+    refresh_token = db.Column(db.String(length=200))
+    expires_at = db.Column(db.Integer)
+    scope = db.Column(db.String(length=100))
+    oauth_uid = db.Column(db.Integer)
+    user = db.relationship('User')
+
+    def to_token(self):
+        return dict(
+            access_token=self.access_token,
+            token_type=self.token_type,
+            refresh_token=self.refresh_token,
+            expires_at=self.expires_at,
+        )
+
