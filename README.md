@@ -25,7 +25,7 @@ An initial non-APEX implementation of the proof-of-concept app - a note taking a
 * Buttons for creation and upload need to be repositioned
 * Deletion method needs implementing (currently GET (retrieve), PUT (edit), POST (new) are implemented)
 
-__Note: the demo is currently pre-configured with credentials to allow ease of use. Any security credentials configured within the source code are only for the local development servers and there do not pose a security risk as they are not real credentials to a real service.__
+__Note: the demo has placeholder credentials to allow ease of use. Any security credentials configured within the source code are only for the local development servers and they do not pose a security risk as they are not real credentials to a real service.__
 
 ## Running the Demo
 1. Ensure Python 3.7 or above is installed and `pipenv` is installed
