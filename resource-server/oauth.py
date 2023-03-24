@@ -137,7 +137,7 @@ def create_client():
 
     db.session.add(client)
     db.session.commit()
-    return redirect('/')
+    return redirect('/developer')
 
 
 
