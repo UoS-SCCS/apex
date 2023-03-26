@@ -3,7 +3,7 @@ from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from authlib.integrations.sqla_oauth2 import OAuth2AuthorizationCodeMixin
 from . import db
-
+import time
 class User(UserMixin,db.Model):
     id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
     email = db.Column(db.String(100), unique=True)
@@ -29,6 +29,11 @@ class Token(db.Model, OAuth2TokenMixin):
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
     user = db.relationship('User')
+    def is_refresh_token_active(self):
+        if self.is_revoked():
+            return False
+        expires_at = self.issued_at + self.expires_in * 2
+        return expires_at >= time.time()
 
 class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):
     id = db.Column(db.Integer, primary_key=True)

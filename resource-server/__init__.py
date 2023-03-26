@@ -13,7 +13,7 @@ def create_app():
     app = Flask(__name__)
 
     app.config['SECRET_KEY'] = 'xfuf2e+aTAWjBu6aAV9MG9SmqzmncO4zg5HGbW4k8bs='    
-
+    app.config['OAUTH2_REFRESH_TOKEN_GENERATOR']= True
     with app.app_context():
         DB_PATH=os.path.join(app.root_path, "data")
         global USER_FILES_PATH

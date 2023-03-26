@@ -10,6 +10,7 @@ import time
 from authlib.oauth2.rfc6749 import grants
 
 from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
+
 from authlib.oauth2.rfc6750 import BearerTokenValidator
 
 class MyBearerTokenValidator(BearerTokenValidator):
@@ -23,14 +24,30 @@ require_oauth = ResourceProtector()
 # only bearer token is supported currently
 require_oauth.register_token_validator(MyBearerTokenValidator())
 
-
-
-
 oauth = Blueprint('oauth', __name__)
+
+class RefreshTokenGrant(grants.RefreshTokenGrant):
+    INCLUDE_NEW_REFRESH_TOKEN = True
+    def authenticate_refresh_token(self, refresh_token):
+        item = Token.query.filter_by(refresh_token=refresh_token).first()
+        # define is_refresh_token_valid by yourself
+        # usually, you should check if refresh token is expired and revoked
+        if item and item.is_refresh_token_active():
+            return item
+
+    def authenticate_user(self, credential):
+        return User.query.get(credential.user_id)
+
+    def revoke_old_credential(self, credential):
+        credential.revoked = True
+        db.session.add(credential)
+        db.session.commit()
+
 
 
 
 class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
+    
     def save_authorization_code(self, code, request):
         client = request.client
         auth_code = AuthorizationCode(
@@ -72,11 +89,16 @@ server = AuthorizationServer(
     save_token=save_token,
 )
 
+class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
+    def authenticate_user(self, username, password):
+        user = User.query.filter_by(username=username).first()
+        if user is not None and user.check_password(password):
+            return user
 
 def config_oauth(app):
     server.init_app(app)
     server.register_grant(AuthorizationCodeGrant)
-
+    server.register_grant(RefreshTokenGrant)
 
 
 def split_by_crlf(s):

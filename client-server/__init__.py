@@ -9,15 +9,16 @@ DB_PATH = ""
 USER_FILES_PATH = ""
 def create_app():
     app = Flask(__name__)
-    app.config["MYDRIVE_CLIENT_ID"]="LhtuzZbcdjNFLr0VT7GrDc6G"
-    app.config["MYDRIVE_CLIENT_SECRET"]="E62Jh9ITGyTYpYTpkmYabT38kKcWj4RtHOEoouFagX4FU5Rc"
+    app.config["MYDRIVE_CLIENT_ID"]="Vg7hWQdX7DKjJo6Mgo9Ujsgs"
+    app.config["MYDRIVE_CLIENT_SECRET"]="WFI9EKvo5urmEOqBJBQ9xFdnq5055mE0kZ4JmbvwKqXT283E"
     #app.config["MYDRIVE_REQUEST_TOKEN_URL"]="http://localhost:5000/oauth/token"
     app.config["MYDRIVE_ACCESS_TOKEN_URL"]="http://localhost:5000/oauth/token"
+    app.config["MYDRIVE_REFRESH_TOKEN_URL"]="http://localhost:5000/oauth/token"
     app.config["MYDRIVE_AUTHORIZE_URL"]="http://localhost:5000/oauth/authorize"
-    app.config["MYDRIVE_ACCESS_TOKEN_PARAMS"]= {"grant_type":"authorization_code"}
+    #app.config["MYDRIVE_ACCESS_TOKEN_PARAMS"]= {"grant_type":"authorization_code"}
     app.config["MYDRIVE_CLIENT_KWARGS"]={'scope': 'full'}
     app.config["MYDRIVE_API_BASE_URL"]="http://localhost:5000/api/v1/users/"
-
+    
     #NoteTaker
 
     app.config['SECRET_KEY'] = 'rRiuFv1DIS/m0QX4OjTmjVq8sl5kAnJge1cWrvvyhm4='

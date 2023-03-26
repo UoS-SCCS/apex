@@ -16,7 +16,7 @@ from flask_login.config import EXEMPT_METHODS
 from werkzeug.exceptions import HTTPException
 from pathvalidate import sanitize_filepath
 from werkzeug.datastructures import FileStorage
-
+import json
 import os
 from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
 from authlib.oauth2.rfc6750 import BearerTokenValidator
@@ -96,6 +96,7 @@ class Files(Resource):
     @validate_user
     def get(self, user_id, unsafe_filename=None):
         try:
+            print(current_token.refresh_token)
             #print("Unsafe:" + unsafe_filename)
             if unsafe_filename is None:
                 print("None filename")
