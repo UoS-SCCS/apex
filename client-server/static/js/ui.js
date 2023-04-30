@@ -28,6 +28,7 @@ function processFolder(parentPath, parentElement, items) {
     }
 
 }
+
 function createFolderUI(parentElement, folderName, folderPath) {
     const item = document.createElement("li");
     item.addEventListener("click",function(evt) {

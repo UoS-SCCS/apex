@@ -8,6 +8,9 @@ main = Blueprint('main', __name__)
 def index():
     return render_template('index.html')
 
+@main.route('/clientAgent')
+def client_agent():
+    return render_template('clientAgent.html')
 #@main.route('/notes')
 #@login_required
 #def notes():

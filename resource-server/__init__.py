@@ -2,7 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_restful import Api
-
+from flask_cors import CORS
 
 import os
 # init SQLAlchemy so we can use it later in our models
@@ -11,7 +11,11 @@ DB_PATH = ""
 USER_FILES_PATH = ""
 def create_app():
     app = Flask(__name__)
-
+    CORS(app,origins=["http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000"],supports_credentials=True)
+    app.config['CORS_HEADERS'] = 'Content-Type'
+    app.config['SESSION_COOKIE_SAMESITE'] = "None"
+    app.config['SESSION_COOKIE_SECURE'] = True
+    
     app.config['SECRET_KEY'] = 'xfuf2e+aTAWjBu6aAV9MG9SmqzmncO4zg5HGbW4k8bs='    
     app.config['OAUTH2_REFRESH_TOKEN_GENERATOR']= True
     with app.app_context():

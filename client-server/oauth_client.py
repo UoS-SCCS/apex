@@ -1,9 +1,11 @@
-from flask import url_for, render_template, redirect
+from flask import url_for, render_template, redirect,jsonify
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
 from . import db
 from authlib.integrations.flask_client import OAuth
-from .models import OAuth2Token
+from .models import OAuth2Token, OTP
+import secrets
+import time
 oauth = OAuth()
 
 def fetch_mydrive_token():
@@ -33,12 +35,30 @@ def config_oauth_client(app):
 oauth_client = Blueprint('oauth_client', __name__)
 
 @oauth_client.route('/link')
-def login():
+@login_required
+def link():
+    generated_otp= str(secrets.randbelow(10000)).rjust(4, '0')
+    otp_code = OTP(
+        otp=generated_otp,
+        user_id=current_user.get_id(),
+        otp_time= int(time.time())
+    )
+    db.session.merge(otp_code)
+    db.session.commit()
+    resp = {"otp":generated_otp}
+    return jsonify(resp)
+    
+
+@oauth_client.route('/link-authorise')
+@login_required
+def link_authorise():
     redirect_uri = url_for('oauth_client.authorize', _external=True)
-    print(redirect_uri)
     return oauth.mydrive.authorize_redirect(redirect_uri)
 
+
+
 @oauth_client.route('/authorize')
+@login_required
 def authorize():
     token = oauth.mydrive.authorize_access_token()
     print(token)
@@ -60,9 +80,10 @@ def authorize():
     return redirect('/notes')
 
 @oauth_client.route('/test')
+@login_required
 def test():
     #token = oauth.mydrive.authorize_access_token()
-    resp = oauth.mydrive.get('http://localhost:5000/api/v1/users/1/files/')
+    resp = oauth.mydrive.get('https://localhost:5000/api/v1/users/1/files/')
     resp.raise_for_status()
     print(resp.json())
     #profile = resp.json()

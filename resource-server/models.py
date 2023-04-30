@@ -20,7 +20,7 @@ class Client(db.Model, OAuth2ClientMixin):
         db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
     )
     user = db.relationship('User')
-
+    pk_endpoint = db.Column(db.String(1000))
 
 
 class Token(db.Model, OAuth2TokenMixin):

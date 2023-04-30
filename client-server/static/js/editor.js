@@ -52,7 +52,15 @@ function loadEditor(){
 
   document.getElementsByClassName("ql-editor")[0].classList.add("z-depth-2");
 }
+function saveDataAPEX(data){
+  startClientAgent("register",data);
+}
+var useAPEX=true;
 function saveData(data){
+  if(useAPEX){
+    saveDataAPEX(data);
+    return;
+  }
   var url = "/notes/save";
   uploadData = {};
   uploadData["data"]=data;
@@ -152,3 +160,26 @@ function createNewNote(){
     .then((data) => updateList(data));
   }
 }
+function startLink(){
+  var url = "/link";
+  fetch(url)
+    .then((response) => response.json())
+    .then((data) => showOTP(data));
+}
+function showOTP(resp){
+  document.getElementById("otpCode").innerText=resp.otp;
+  
+  var instance = M.Modal.getInstance(document.getElementById("otpModal"));
+  instance.open();
+}
+function proceedWithLinking(){
+  //var left = (screen.width/2)-(500/2);
+  //var top = (screen.height/2)-(500/2);
+  //window.open("/link-authorise","AuthoriseWindow","width=500px,height=500px, top="+top+", left="+left);
+  window.location = "/link-authorise";
+}
+document.addEventListener('DOMContentLoaded', function() {
+
+  var elems = document.querySelectorAll('.modal');
+  var instances = M.Modal.init(elems);
+});

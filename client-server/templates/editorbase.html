@@ -19,6 +19,7 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link href="//cdn.quilljs.com/1.3.6/quill.bubble.css" rel="stylesheet">
     <script src="/static/js/editor.js"></script>
+    <script src="/static/js/client_agent_handler.js"></script>
 
 </head>
 
@@ -85,7 +86,7 @@
                 {% if current_user.is_linked %}
 
                 {% else %}
-                <li><a class="btn" href="/link">Link to MyDrive</a></li>
+                <li><a class="btn" onclick="startLink()" href="#">Link to MyDrive</a></li>
                 
                 {% endif %}
                 
@@ -93,6 +94,19 @@
 
               </ul>
               <!--<a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>-->
+              <div id="otpModal" class="modal">
+                <div class="modal-content">
+                  <h4>One-Time Passcode</h4>
+                  <p>The following is your One-Time Passcode (OTP) that will be requested by the your storage provider to authorise the linking request.</p>
+                  <p id="otpCode" class="otp-code"></p>
+                  <p>Click the <b>Continue</b> to proceed with linking to your storage provider. Or click <b>Cancel</b> if you do not wish to proceed.</p>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="modal-close waves-effect waves-green btn-flat">Cancel</a>
+                    <a onclick="proceedWithLinking()" href="#" class="modal-close waves-effect waves-green btn-flat">Continue</a>
+                </div>
+              </div>
+                      
         <main>
             
                {% block content %}

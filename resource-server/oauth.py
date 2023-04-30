@@ -7,6 +7,7 @@ from authlib.integrations.flask_oauth2 import AuthorizationServer
 from flask_login import login_required, current_user
 from . import db
 import time
+import json
 from authlib.oauth2.rfc6749 import grants
 
 from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
@@ -157,33 +158,53 @@ def create_client():
     else:
         client.client_secret = gen_salt(48)
 
+    client.pk_endpoint = form["pk_endpoint"]
     db.session.add(client)
     db.session.commit()
     return redirect('/developer')
 
 
 
+
+
 @oauth.route('/oauth/authorize', methods=['GET', 'POST'])
 @login_required
 def authorize():
+    print("hat is going on")
     # Login is required since we need to know the current resource owner.
     # It can be done with a redirection to the login page, or a login
     # form on this authorization page.
     if request.method == 'GET':
-        grant = server.get_consent_grant(end_user=current_user)
-        client = grant.client
-        scope = client.get_allowed_scope(grant.request.scope)
+        is_apex = request.args.get("isAPEX", "")
+        print("in here")
+        print(is_apex)
+        #is_open_popup = request.args.get("openpopup", False, type=bool)
+        #if is_open_popup:
+        #    return redirect("https://127.0.0.3:5000/provider-agent")
+        #el
+        if is_apex=="True":
+            grant = server.get_consent_grant(end_user=current_user)
+            client = grant.client
+            json_data = {"action":"authorize","pk_endpoint":client.pk_endpoint}
+            return render_template(
+                'load_pa.html', data=json.dumps(json_data),
+            )
+        
+        else:
+            grant = server.get_consent_grant(end_user=current_user)
+            client = grant.client
+            scope = client.get_allowed_scope(grant.request.scope)
 
-        # You may add a function to extract scope into a list of scopes
-        # with rich information, e.g.
-        scopes = scope# describe_scope(scope)  # returns [{'key': 'email', 'icon': '...'}]
-        return render_template(
-            'authorize.html',
-            grant=grant,
-            user=current_user,
-            client=client,
-            scopes=scopes,
-        )
+            # You may add a function to extract scope into a list of scopes
+            # with rich information, e.g.
+            scopes = scope# describe_scope(scope)  # returns [{'key': 'email', 'icon': '...'}]
+            return render_template(
+                'authorize.html',
+                grant=grant,
+                user=current_user,
+                client=client,
+                scopes=scopes,
+            )
     confirmed = request.form['confirm']
     if confirmed:
         # granted by resource owner

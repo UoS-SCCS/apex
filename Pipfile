@@ -13,6 +13,9 @@ flask-restful = "*"
 pathvalidate = "*"
 requests = "*"
 requests-oauthlib = "*"
+flask-cors = "*"
+josepy = "*"
+pyopenssl = "*"
 
 [dev-packages]
 

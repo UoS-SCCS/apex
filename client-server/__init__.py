@@ -1,24 +1,33 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-
+from flask_cors import CORS
+from .keystore import KeyStore
 import os
+import logging
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 DB_PATH = ""
 USER_FILES_PATH = ""
+KEY_STORE = None
 def create_app():
+    global KEY_STORE
     app = Flask(__name__)
-    app.config["MYDRIVE_CLIENT_ID"]="Vg7hWQdX7DKjJo6Mgo9Ujsgs"
-    app.config["MYDRIVE_CLIENT_SECRET"]="WFI9EKvo5urmEOqBJBQ9xFdnq5055mE0kZ4JmbvwKqXT283E"
-    #app.config["MYDRIVE_REQUEST_TOKEN_URL"]="http://localhost:5000/oauth/token"
+    CORS(app,origins=["http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000"],supports_credentials=True)
+    app.config['CORS_HEADERS'] = 'Content-Type'
+    app.config['SESSION_COOKIE_SAMESITE'] = "None"
+    app.config['SESSION_COOKIE_SECURE'] = True
+    app.config["MYDRIVE_CLIENT_ID"]="8ECvqMzb6QZ27gstjT8pRVKi"
+    app.config["MYDRIVE_CLIENT_SECRET"]="MWjscIcTbijXSHYGhyMoAQplakdWGcHJ0Dw15hwNaIO0G5oC"
+    #app.config["MYDRIVE_REQUEST_TOKEN_URL"]="https://localhost:5000/oauth/token"
     app.config["MYDRIVE_ACCESS_TOKEN_URL"]="http://localhost:5000/oauth/token"
     app.config["MYDRIVE_REFRESH_TOKEN_URL"]="http://localhost:5000/oauth/token"
-    app.config["MYDRIVE_AUTHORIZE_URL"]="http://localhost:5000/oauth/authorize"
+    app.config["MYDRIVE_AUTHORIZE_URL"]="http://localhost:5000/oauth/authorize?isAPEX=True"
     #app.config["MYDRIVE_ACCESS_TOKEN_PARAMS"]= {"grant_type":"authorization_code"}
     app.config["MYDRIVE_CLIENT_KWARGS"]={'scope': 'full'}
     app.config["MYDRIVE_API_BASE_URL"]="http://localhost:5000/api/v1/users/"
-    
+    logging.basicConfig(level=logging.DEBUG, filename='loginDEBUG.log', filemode='a')
+    logging.getLogger('flask_cors').level = logging.DEBUG
     #NoteTaker
 
     app.config['SECRET_KEY'] = 'rRiuFv1DIS/m0QX4OjTmjVq8sl5kAnJge1cWrvvyhm4='
@@ -27,7 +36,11 @@ def create_app():
         if not os.path.exists(DB_PATH):
             os.makedirs(DB_PATH)
         
-        
+    with app.app_context():
+        KEY_STORE_PATH=os.path.join(app.root_path, "data","keystore.json")
+    
+    KEY_STORE = KeyStore(KEY_STORE_PATH)
+
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + DB_PATH + '/db.sqlite'
     
     login_manager = LoginManager()
@@ -61,6 +74,10 @@ def create_app():
     from .notes import notes as notes_blueprint
     app.register_blueprint(notes_blueprint)
 
+    # blueprint for auth routes in our app
+    from .apex import apex as apex_blueprint
+    app.register_blueprint(apex_blueprint)
+    
     if not os.path.exists("_db.created"):
         
         with app.app_context():

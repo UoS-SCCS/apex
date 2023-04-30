@@ -24,7 +24,7 @@ def get_log_files():
 
 def start_client_server(logfile):
     log_file_fd = open(logfile,"a")
-    start_cmd = ["flask","--app","client-server", "run","--host", "127.0.0.2"]
+    start_cmd = ["flask","--app","client-server", "run","--host", "127.0.0.2","--cert=./localCA/localhost.crt", "--key=./localCA/localhost.key"]
     if(DEBUG):
         start_cmd.append("--debug")
     try:
@@ -35,7 +35,7 @@ def start_client_server(logfile):
     
 def start_resource_server(logfile):
     log_file_fd = open(logfile,"a")
-    start_cmd = ["flask","--app","resource-server", "run","--host", "127.0.0.1"]
+    start_cmd = ["flask","--app","resource-server", "run","--host", "127.0.0.1","--cert=./localCA/localhost.crt", "--key=./localCA/localhost.key"]
     if(DEBUG):
         start_cmd.append("--debug")
     try:
@@ -46,7 +46,7 @@ def start_resource_server(logfile):
 
 def start_pa_server(logfile):
     log_file_fd = open(logfile,"a")
-    start_cmd = ["flask","--app","pa-server", "run","--host", "127.0.0.3"]
+    start_cmd = ["flask","--app","pa-server", "run","--host", "127.0.0.3","--cert=./localCA/localhost.crt", "--key=./localCA/localhost.key"]
     if(DEBUG):
         start_cmd.append("--debug")
     try:

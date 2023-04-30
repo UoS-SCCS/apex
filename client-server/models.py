@@ -1,6 +1,6 @@
 from flask_login import UserMixin
 from . import db
-
+import time
 class User(UserMixin,db.Model):
     id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
     email = db.Column(db.String(100), unique=True)
@@ -27,3 +27,29 @@ class OAuth2Token(db.Model):
             expires_at=self.expires_at,
         )
 
+class OTP(db.Model):
+    
+    otp = db.Column(db.String(6), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), unique=True, primary_key=True
+    )
+    user = db.relationship('User')
+    otp_time = db.Column(
+        db.Integer, nullable=False,
+        default=lambda: int(time.time())
+    )
+    def is_expired(self):
+        print(self.otp_time)
+        print(time.time())
+        return (self.otp_time + 300) < time.time()
+
+    def get_otp(self):
+        return self.otp
+
+    def is_match(self,challenge):
+        if self.otp == self.challenge:
+            return True
+        return False
+
+    def get_otp_time(self):
+        return self.otp_time
