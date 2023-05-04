@@ -28,11 +28,31 @@ function initProviderAgent() {
 
 async function processRewrapPromise(serverPromiseData, promise_id) {
 
-    //TODO Verify signatures
+
+    
+
+    var enc = new TextEncoder("utf-8");
+
     const wrappedAgentKey = serverPromiseData["wrappedAgentKey"];
     const wrappedAgentKeyBytes = base64ToBytes(wrappedAgentKey);
     const wrappedResourceKey = serverPromiseData["wrappedResourceKey"];
     const wrappedResourceKeyBytes = base64ToBytes(wrappedResourceKey);
+
+
+    const clientSig = serverPromiseData["clientSignature"];
+    var sigData = wrappedResourceKey + wrappedAgentKey;
+    var r_elem = hexToBytes(clientSig["r"].substring(2));
+    var s_elem = hexToBytes(clientSig["s"].substring(2));
+    combined = r_elem.concat(s_elem);
+    var clientPublicKey = keystore.getClientPublicKey(serverPromiseData["host"]);
+    const encodedClientPublicKey = clientPublicKey;
+    const publicClientKey = await window.crypto.subtle.importKey("jwk", encodedClientPublicKey, ECDSA, true, ["verify"]);
+    let verified = await window.crypto.subtle.verify(ECDSA, publicClientKey, Int8Array.from(combined), enc.encode(sigData));
+    console.log("signature:" + verified);
+    if (!verified) {
+        console.log("signature verification failed");
+        return;
+    }
 
     const privateKey = await keystore.getEncPrivateKey("encryption");
     const decryptedAgentKey = await window.crypto.subtle.decrypt(
@@ -68,10 +88,11 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     const output = {};
     //output["reWrappedResourceKey"] = reEncryptedData
     output["promise_id"] = promise_id;
-    //TODO this is result of signature check
+    
     output["valid"] = true
     const returnData = {};
-    returnData["promise"] = fetch("http://localhost:5000/promise-fulfilment", {
+    returnData["reWrappedResourceKey"] = reEncryptedData
+    returnData["promise"] = await fetch("http://localhost:5000/promise-fulfilment", {
         method: "POST",
         mode: "cors",
         cache: "no-cache",
@@ -81,7 +102,7 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
         },
         body: JSON.stringify(output)
     });
-    returnData["reWrappedResourceKey"] = reEncryptedData
+    
     return returnData;
 }
 
@@ -118,7 +139,6 @@ function retrieve(data) {
                 redirectArgs["agentChanges"] = false;
                 redirectArgs["type"] = serverData["type"];
                 redirectArgs["rewrappedResourceKey"] = JSON.stringify(reWrappedResourceKey);
-
                 const params = new URLSearchParams(redirectArgs);
                 var redirectUrl = data["redirect"] + "?" + params.toString();
                 window.location = redirectUrl;
@@ -129,7 +149,12 @@ function retrieve(data) {
         });
 
 }
-
+function hexToBytes(hex) {
+    let bytes = [];
+    for (let c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
 function save(data) {
     document.getElementById("saveBlock").classList.remove("hidden-elem");
 
@@ -145,7 +170,27 @@ function save(data) {
         }
     }).then((response) => response.json())
         .then(async (serverPromiseData) => {
-            //TODO Verify signatures
+            var enc = new TextEncoder("utf-8");
+            //console.log(JSON.stringify(serverPromiseData));
+            var id = serverPromiseData["target_file"];
+            idx = id.indexOf("NoteTaker/") + "NoteTaker/".length;
+            id = id.substring(idx);
+            //console.log(JSON.stringify(serverPromiseData));
+            const clientSig = serverPromiseData["promise_data"]["clientSignature"]
+            var sigData = serverPromiseData["promise_data"]["userId"] + id + serverPromiseData["promise_data"]["wrappedKey"] + JSON.stringify(serverPromiseData["promise_data"]["encryptedData"], Object.keys(serverPromiseData["promise_data"]["encryptedData"]).sort());
+            var r_elem = hexToBytes(clientSig["r"].substring(2));
+            var s_elem = hexToBytes(clientSig["s"].substring(2));
+            combined = r_elem.concat(s_elem);
+            var clientPublicKey = keystore.getClientPublicKey(serverPromiseData["promise_data"]["host"]);
+            const encodedClientPublicKey = clientPublicKey;
+            const publicClientKey = await window.crypto.subtle.importKey("jwk", encodedClientPublicKey, ECDSA, true, ["verify"]);
+            let verified = await window.crypto.subtle.verify(ECDSA, publicClientKey, Int8Array.from(combined), enc.encode(sigData));
+            console.log("signature:" + verified);
+            if (!verified) {
+                console.log("signature verification failed");
+                
+            }
+
             const wrappedKey = serverPromiseData["promise_data"]["wrappedKey"];
             const wrappedKeyBytes = base64ToBytes(wrappedKey);
             const privateKey = await keystore.getEncPrivateKey("encryption");
@@ -188,12 +233,41 @@ function save(data) {
 
             const output = {};
             output["reEncryptedData"] = reEncryptedData
+
+            var rSigData = id + JSON.stringify(reEncryptedData);
+
+            const signingKey = await keystore.getPrivateKey("signing");
+            const rSigBytes = _arrayBufferToBase64(await window.crypto.subtle.sign(
+                ECDSA,
+                signingKey,
+                enc.encode(rSigData)
+            ));
+
             const ownerPublicKey = await keystore.getEncPublicKey("encryption");
             let wrappedReEncKey = await window.crypto.subtle.wrapKey("raw", reEncKey, ownerPublicKey, {
                 name: "RSA-OAEP",
             });
+
             output["wrappedReEncKey"] = _arrayBufferToBase64(wrappedReEncKey);
+
+            var rkSigData = id + output["wrappedReEncKey"];
+
+            const rkSigBytes = _arrayBufferToBase64(await window.crypto.subtle.sign(
+                ECDSA,
+                signingKey,
+                enc.encode(rkSigData)
+            ));
+
+            output["rSigBytes"] = rSigBytes;
+            output["rkSigBytes"] = rkSigBytes;
             output["promise_id"] = data["promise_id"];
+
+            /**var resSigString = id + serverPromiseData["promise_data"]["wrappedKey"];
+            const resSigBytes = _arrayBufferToBase64(await window.crypto.subtle.sign(
+                ECDSA,
+                signingKey,
+                enc.encode(rkSigData)
+            ));*/
 
             //TODO this is result of signature check
             output["valid"] = true
@@ -294,7 +368,6 @@ async function generateKeys() {
         output["kty"] = encodedEncPublicKey["kty"];
         output["n"] = encodedEncPublicKey["n"];
         const jsonPubKeyStr = JSON.stringify(output, Object.keys(output).sort());
-        console.log("here:" +jsonPubKeyStr);
         const signingKey = await keystore.getPrivateKey("signing");
         return window.crypto.subtle.sign(
             ECDSA,
@@ -331,7 +404,7 @@ function constructKeySignature(otp) {
     encoutput["kty"] = encodedEncPublicKey["kty"];
     encoutput["n"] = encodedEncPublicKey["n"];
     const jsonEncStr = JSON.stringify(encoutput, Object.keys(encoutput).sort());
-    generateHMAC(otp, jsonStr+jsonEncStr, sendKeyHMAC);
+    generateHMAC(otp, jsonStr + jsonEncStr, sendKeyHMAC);
 }
 function sendKeyHMAC(hmac) {
     const data = {};
@@ -395,8 +468,8 @@ const PROVIDER_CERT_ENDPOINT = "http://127.0.0.1:5000/client_cert_endpoint";
 function sendSignatureToServer(currentHost, signature) {
     var data = {};
     data["hostname"] = currentHost;
-    data["signature"] = signature;
-    data["clientPublicKey"] = receivedKey
+    data["signature"] = _arrayBufferToBase64(signature);
+    data["clientPublicKey"] = receivedKey;
     fetch(PROVIDER_CERT_ENDPOINT, {
         method: "POST",
         mode: "cors",
@@ -452,7 +525,7 @@ function verifyHMAC(key, signature, data, callback) {
     var enc = new TextEncoder("utf-8");
     const sigBytes = new Uint8Array(signature.match(/[\da-f]{2}/gi).map(function (h) {
         return parseInt(h, 16)
-      }))
+    }))
     window.crypto.subtle.importKey(
         "raw", // raw format of the key - should be Uint8Array
         enc.encode(key),

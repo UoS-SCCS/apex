@@ -1,7 +1,7 @@
 from types import NoneType
 from flask import Blueprint, render_template, redirect, url_for, request, flash,send_file,jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User, Token
+from .models import User, Token, ClientCertificate
 from flask_login import login_user, login_required, logout_user
 from . import db
 from . import USER_FILES_PATH, APEX_FILES_PATH
@@ -21,7 +21,12 @@ import os
 import uuid
 from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
 from authlib.oauth2.rfc6750 import BearerTokenValidator
-
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicNumbers,SECP256R1
+import base64
 class MyBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
         return Token.query.filter_by(access_token=token_string).first()
@@ -151,6 +156,17 @@ class Files(Resource):
             args = parser.parse_args()
             if not args['file'] is None:
                 if "type" in args and args["type"]=="APEX":
+                    file = args['file']
+                    json_file = json.loads(file.read())
+                    file.seek(0)
+                    name = unsafe_filename.replace("NoteTaker/", "",1)
+                    #signature_data = str(user_id) + name + json_file["wrappedKey"] + json.dumps(json_file["encryptedData"])
+                    #client_certificate = ClientCertificate.query.filter_by(user_id=user_id, host=json_file["host"]).first()
+                    #public_signing_key = convert_json_public_key(json.loads(client_certificate.public_key))
+                    #dss_signature = base64.urlsafe_b64decode(json_file["clientSignature"])
+                    
+                    #public_signing_key.verify(dss_signature,signature_data.encode('utf-8'),ec.ECDSA(hashes.SHA256()))
+
                     promise_id = self._store_promise(target,file = args['file'])
                     return jsonify({"success":True,"promise_id":promise_id,"promise":"direct"})
                 else:
@@ -160,9 +176,17 @@ class Files(Resource):
             else:
                 os.mkdir(target)
                 return jsonify({"success":True})
-            
+        except InvalidSignature:
+            print("signature checking failed", flush=True)
+            abort(
+                500,
+                message="Signature checking failed --> {}".format(
+                    e
+                ),
+            )    
         except Exception as e:
             print(e)
+            traceback.print_exc()
             abort(
                 500,
                 message="There was an error while processing your request --> {}".format(
@@ -193,6 +217,17 @@ class Files(Resource):
             parser.add_argument("type",location='args')
             args = parser.parse_args()
             if "type" in args and args["type"]=="APEX":
+                #file = args['file']
+                #json_file = json.loads(file.read())
+                #file.seek(0)
+                #name = unsafe_filename.replace("NoteTaker/", "",1)
+                #signature_data = str(user_id) + name + json_file["wrappedKey"] + json.dumps(json_file["encryptedData"])
+                #client_certificate = ClientCertificate.query.filter_by(user_id=user_id, host=json_file["host"]).first()
+                #public_signing_key = convert_json_public_key(json.loads(client_certificate.public_key))
+                #dss_signature = base64.urlsafe_b64decode(json_file["clientSignature"])
+                
+                #public_signing_key.verify(dss_signature,signature_data.encode('utf-8'),ec.ECDSA(hashes.SHA256()))
+                              
                 promise_id = self._store_promise(target,file = args['file'])
                 return jsonify({"success":True,"promise_id":promise_id,"promise":"direct"})
             else:
@@ -200,6 +235,14 @@ class Files(Resource):
                 file = args['file']    
                 file.save(target)
                 return jsonify({"success":True})            
+        except InvalidSignature:
+            print("signature checking failed", flush=True)
+            abort(
+                500,
+                message="Signature checking failed --> {}".format(
+                    e
+                ),
+            )
         except Exception as e:
             print(e)
             abort(
@@ -239,6 +282,13 @@ class Files(Resource):
                 ),
             )
 
+def convert_to_dss_sig(signature_bytes):
+    return encode_dss_signature(int.from_bytes(signature_bytes[0:32], "big"),int.from_bytes(signature_bytes[32:], "big"))
+
+def convert_json_public_key(json_public_key):
+    curve =SECP256R1()
+    return (EllipticCurvePublicNumbers( int.from_bytes(base64.urlsafe_b64decode(json_public_key["x"]+"=="), "big"), int.from_bytes(base64.urlsafe_b64decode(json_public_key["y"]+"=="), "big"),curve)).public_key()
+    
 
 class Wrapping(Resource):
 
@@ -248,12 +298,17 @@ class Wrapping(Resource):
     def _validate_path(self,user_dir, filepath):
         return os.path.commonprefix([user_dir, os.path.realpath(filepath)])
     
-    def _store_promise(self, target, wrapped_agent_key, wrapped_resource_key):
+    def _store_promise(self, target, wrapped_agent_key, wrapped_resource_key, clientSignature, host):
         final_data = {}
         final_data["target"]=target
         final_data["type"]="rewrap"
+        final_data["host"]=host
         final_data["wrappedAgentKey"]=wrapped_agent_key
         final_data["wrappedResourceKey"]= wrapped_resource_key
+        final_data["clientSignature"]= clientSignature
+
+        
+        print(final_data, flush=True)
         promise_id = str(uuid.uuid4())
         promise_dir = os.path.join(APEX_FILES_PATH,promise_id)
         if not os.path.exists(promise_dir):
@@ -277,14 +332,18 @@ class Wrapping(Resource):
             target = os.path.join(user_dir,filepath)
             parser = reqparse.RequestParser()
             parser.add_argument('wrappedAgentKey', type=str, location='json')            
-            parser.add_argument('wrappedKey', type=str, location='json')            
+            parser.add_argument('wrappedKey', type=str, location='json')
+            parser.add_argument('clientSignature', type=dict, location='json')
+            parser.add_argument('host', type=str, location='json')
+
+
             args = parser.parse_args()
             
             if not args['wrappedAgentKey'] is None and not args['wrappedAgentKey'] is None:
-                
+
                 wrapped_agent_key = args["wrappedAgentKey"]
                 wrapped_resource_key = args["wrappedKey"]
-                promise_id = self._store_promise(target,wrapped_agent_key,wrapped_resource_key)
+                promise_id = self._store_promise(target,wrapped_agent_key,wrapped_resource_key,args["clientSignature"],args["host"])
                 return jsonify({"success":True,"promise_id":promise_id,"promise":"direct"})
         except Exception as e:
             print(e)

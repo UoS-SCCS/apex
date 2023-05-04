@@ -18,6 +18,12 @@ An initial non-APEX implementation of the proof-of-concept app - a note taking a
     * Provides a linking UI for a user to link their account at the Resource Server to their account on the Client Server, i.e. OAuth authorization
     * Provides a UI for creating, viewing and editing notes
 
+## Current Status - Phase 2
+* APEX Register and Retrieval are implemented
+* You need to be logged into the Client and Server prior to running the demo as it currently does not trigger login redirects, but will do in the future
+* Notes can be created, edited and saved
+* Deletion is not currently implemented, but is not core to APEX
+
 ### Still to implement
 * __Token refresh and error handling when a token has expired - this is the most urgent aspect to implement as that workflow currently doesn't exist. As such, the demo works fine on an unlinked account, but may have problems when a token expires__
 * The Resource Server UI currently scales instead of being fixed with internal scrollbars
@@ -32,11 +38,7 @@ __Note: the demo has placeholder credentials to allow ease of use. Any security 
 2. Check out this repository
 3. Run `pipenv install`
 4. Run `pipenv shell` (2 shells will be required)
-5. To start the Resource Server:`flask --app resource-server run`
-    * The resource server is available at [http://localhost:5000](http://localhost:5000)
-
-6. To start the Client Server: `flask --app client-server run --host 127.0.0.2`
-    * The resource server is available at [http://127.0.0.2:5000](http://127.0.0.2:5000)
+5. Run `python3 launch.py` which will launch all three servers and redirect their outputs to log files
 
 ## Using the Demo
 
@@ -58,6 +60,7 @@ __Note: the demo has placeholder credentials to allow ease of use. Any security 
 * Go to the developer tab, and click `Create Client`
 * client uri can be anything, for now: `http://127.0.0.2:5000`
 * redirect uri: `http://127.0.0.2:5000/authorize`
+* pk_endpoint: `http://127.0.0.2:5000/pk_endpoint`
 * leave the rest a defaults
 
 Go back to the developer tab and copy the client_id and client_secret to `__init__.py` in the client-server directory, and restart the Client.

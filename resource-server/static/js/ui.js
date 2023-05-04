@@ -403,7 +403,6 @@ class FolderObject extends FileSystemObject {
             breadcrumb.appendChild(breadcrumbLink);
             breadcrumbList.appendChild(breadcrumb);
         }else{
-            console.log("in non root");
             const breadcrumb = document.createElement("li");
             breadcrumb.className="is-active";
             const breadcrumbLink = document.createElement("a");

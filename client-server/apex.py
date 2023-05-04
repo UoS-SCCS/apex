@@ -10,7 +10,7 @@ from .oauth_client import oauth
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ec
 from .models import OTP, ClientAgentKey
-from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature
+from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature,decode_dss_signature
 from . import db
 import json
 import hmac
@@ -105,13 +105,18 @@ def save_apex():
     wrapped_key = data["wrappedKey"]
     encrypted_data = data["encryptedData"]
     private_key = KEY_STORE.get_private_key("signing")
-    signature = private_key.sign(wrapped_key.encode('utf-8'), ec.ECDSA(hashes.SHA256()))
-    
+    signature_data = str(current_user.oauth_uid) + data["name"] + wrapped_key + json.dumps(encrypted_data, sort_keys=True,indent=None, separators= (',', ':'))
+    signature = private_key.sign(signature_data.encode('utf-8'), ec.ECDSA(hashes.SHA256()))
+    decoded_sig = decode_dss_signature(signature)
+    client_sig={}
+    client_sig["r"] = hex(decoded_sig[0])
+    client_sig["s"] = hex(decoded_sig[1])
     output = {}
-    
+    output["userId"]=str(current_user.oauth_uid)
+    output["host"]="127.0.0.2"
     output["wrappedKey"]=wrapped_key
     output["encryptedData"]=encrypted_data
-    output["clientSignature"]=base64.b64encode(signature).decode('utf-8')
+    output["clientSignature"]=client_sig#base64.b64encode(signature).decode('utf-8')
     output["promiseFulfilment"]=["direct"]
     updated_file = {"file": StringIO(json.dumps(output))}
     apex_data ={}
@@ -133,7 +138,7 @@ def retrieve_apex():
         res["code"]=1
         res["msg"] = "Parameters missing"
         return Response(status=500, mimetype="application/json", response=json.dumps(res))
-    
+
     resp = oauth.mydrive.get(str(current_user.oauth_uid) + '/files/NoteTaker/'+request.args["name"]+"?type=APEX")
     resp.raise_for_status()
     return jsonify(json.loads(resp.content))
@@ -144,6 +149,18 @@ def retrieve_apex():
 def wrap_key_apex():
     
     json_data= request.get_json()
+
+    wrapped_agent_key = json_data["wrappedAgentKey"]
+    wrapped_key = json_data["wrappedKey"]
+    private_key = KEY_STORE.get_private_key("signing")
+    signature_data = wrapped_key + wrapped_agent_key
+    signature = private_key.sign(signature_data.encode('utf-8'), ec.ECDSA(hashes.SHA256()))
+    decoded_sig = decode_dss_signature(signature)
+    client_sig={}
+    client_sig["r"] = hex(decoded_sig[0])
+    client_sig["s"] = hex(decoded_sig[1])
+    json_data["host"]="127.0.0.2"
+    json_data["clientSignature"]=client_sig
     json_data["promiseFulfilment"]=["direct"]
     headers = {'content-type': 'application/json'}
     resp = oauth.mydrive.post(str(current_user.oauth_uid) + '/wrapping/NoteTaker/' + json_data["name"],data=json.dumps(json_data), headers=headers)    

@@ -1,16 +1,20 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User
-from flask_login import login_user, login_required, logout_user
+from .models import User, ClientCertificate
+from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.urls import url_quote
 from . import db
-
+import json
 auth = Blueprint('auth', __name__)
 
 @auth.route('/client_cert_endpoint', methods=['POST'])
 @login_required
 def client_cert_endpoint():
     data = request.json
+    #print(data)
+    client_cert = ClientCertificate(user_id=current_user.get_id(),public_key=json.dumps(data["clientPublicKey"]),pk_signature=json.dumps(data["signature"]),host=data["hostname"])
+    db.session.add(client_cert)
+    db.session.commit()
     return jsonify({"success":True})
 
 @auth.route('/logout')

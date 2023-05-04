@@ -22,6 +22,15 @@ class Client(db.Model, OAuth2ClientMixin):
     user = db.relationship('User')
     pk_endpoint = db.Column(db.String(1000))
 
+class ClientCertificate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    user = db.relationship('User')
+    public_key = db.Column(db.String())
+    host = db.Column(db.String())
+    pk_signature = db.Column(db.String())
 
 class Token(db.Model, OAuth2TokenMixin):
     id = db.Column(db.Integer, primary_key=True)

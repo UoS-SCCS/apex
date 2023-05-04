@@ -61,6 +61,7 @@ function saveDataAPEX(data) {
 }
 var useAPEX = true;
 function saveData(data) {
+  startSave = performance.now();
   if (currentNoteApex) {
     saveDataAPEX(data);
     return;
@@ -79,7 +80,18 @@ function saveData(data) {
     .then((response) => response.json())
     .then((data) => saveResponse(data));
 }
+function calculateTimings(){
+  const timing = {};
+  timing["start"] = startSave;
+  timing["end"]=endSave;
+  timing["duration"]=endSave-startSave;
+  timing["item"] = currentNote;
+  timing["isApex"] = currentNoteApex;
+  save_timing_data.push(timing);
+}
 function saveResponse(data) {
+  endSave = performance.now();
+  calculateTimings();
   if (data["success"] == true) {
     M.toast({ html: 'File Saved!', classes: 'rounded' });
   }
@@ -179,15 +191,46 @@ function getNote(name, APEX = false) {
 var requestStart;
 var requestEnd;
 var timing_data= [];
+var startSave;
+var endSave;
+var save_timing_data= [];
+function exportSaveTiming(){
+  var durations = [];
+  console.log(JSON.stringify(save_timing_data));
+  var total =0;
+  for(var i=1;i<save_timing_data.length;i++){
+    durations.push(save_timing_data[i]["duration"])
+    total=total + save_timing_data[i]["duration"];
+  }
+  const result = getStandardDeviation(durations);
+
+  console.log("Average:" + (total/(save_timing_data.length-1)));
+  console.log("Mean:" + result[0]);
+  console.log("Std:" + result[1]);
+
+}
 
 function exportTiming(){
+  var durations = [];
   console.log(JSON.stringify(timing_data));
   var total =0;
-  for(var i=0;i<timing_data.length;i++){
+  for(var i=1;i<timing_data.length;i++){
+    durations.push(timing_data[i]["duration"])
     total=total + timing_data[i]["duration"];
   }
-  console.log("Average:" + (total/timing_data.length));
+  const result = getStandardDeviation(durations);
 
+  console.log("Average:" + (total/(timing_data.length-1)));
+  console.log("Mean:" + result[0]);
+  console.log("Std:" + result[1]);
+
+}
+
+function getStandardDeviation (array) {
+  const n = array.length
+  const mean = array.reduce((a, b) => a + b) / n
+  const std= Math.sqrt(array.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
+  return [mean,std];
 }
 function updateEditor(data) {
   requestEnd = performance.now();

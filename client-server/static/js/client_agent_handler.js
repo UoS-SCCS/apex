@@ -46,6 +46,8 @@ function processMessage(data) {
         refreshNotesList();
     }else if(data["action"]=="Complete" && data["process"]=="Save"){
         closeClientAgent();
+        endSave = performance.now();
+        calculateTimings();
         M.toast({ html: 'File Saved!', classes: 'rounded' });
     }else if(data["action"]=="Complete" && data["process"]=="Retrieve"){
         closeClientAgent();
