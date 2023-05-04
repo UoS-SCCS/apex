@@ -16,8 +16,6 @@ from authlib.oauth2.rfc6750 import BearerTokenValidator
 
 class MyBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
-        print("TokenString:" + token_string)
-        
         return Token.query.filter_by(access_token=token_string).first()
 
 require_oauth = ResourceProtector()
@@ -170,18 +168,11 @@ def create_client():
 @oauth.route('/oauth/authorize', methods=['GET', 'POST'])
 @login_required
 def authorize():
-    print("hat is going on")
     # Login is required since we need to know the current resource owner.
     # It can be done with a redirection to the login page, or a login
     # form on this authorization page.
     if request.method == 'GET':
         is_apex = request.args.get("isAPEX", "")
-        print("in here")
-        print(is_apex)
-        #is_open_popup = request.args.get("openpopup", False, type=bool)
-        #if is_open_popup:
-        #    return redirect("https://127.0.0.3:5000/provider-agent")
-        #el
         if is_apex=="True":
             grant = server.get_consent_grant(end_user=current_user)
             client = grant.client

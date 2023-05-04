@@ -31,12 +31,11 @@ class KeyStore:
 
     def get_private_key(self, name):
         if name in self.key_store_json:
-            print(self.key_store_json[name]["private"])
             jwkec = josepy.JWKEC.from_json(self.key_store_json[name]["private"])
             return jwkec.key
         else:
             return None
-        
+    
     def get_public_key(self, name):
         private_key = self.get_private_key(name)
         if private_key is None:

@@ -3,12 +3,13 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_restful import Api
 from flask_cors import CORS
-
+import logging
 import os
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
 DB_PATH = ""
 USER_FILES_PATH = ""
+APEX_FILES_PATH = ""
 def create_app():
     app = Flask(__name__)
     CORS(app,origins=["http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000"],supports_credentials=True)
@@ -18,6 +19,8 @@ def create_app():
     
     app.config['SECRET_KEY'] = 'xfuf2e+aTAWjBu6aAV9MG9SmqzmncO4zg5HGbW4k8bs='    
     app.config['OAUTH2_REFRESH_TOKEN_GENERATOR']= True
+    logging.basicConfig(level=logging.DEBUG, filename='loginDEBUG.log', filemode='a')
+    logging.getLogger('flask_cors').level = logging.DEBUG
     with app.app_context():
         DB_PATH=os.path.join(app.root_path, "data")
         global USER_FILES_PATH
@@ -25,6 +28,11 @@ def create_app():
         
         if not os.path.exists(USER_FILES_PATH):
             os.makedirs(USER_FILES_PATH)
+        global APEX_FILES_PATH
+        APEX_FILES_PATH = os.path.join(app.root_path, "_apex_files")
+        
+        if not os.path.exists(APEX_FILES_PATH):
+            os.makedirs(APEX_FILES_PATH)
         
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + DB_PATH + '/db.sqlite'
     
@@ -56,26 +64,33 @@ def create_app():
     from .main import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
+    # blueprint for non-auth parts of app
+    from .apex import apex as apex_blueprint
+    app.register_blueprint(apex_blueprint)
+
+
     from .api import api as api_blueprint
-    from .api import Files
+    from .api import Files, Wrapping
     api = Api(api_blueprint)
     api.add_resource(Files, "/users/<user_id>/files/<path:unsafe_filename>","/users/<user_id>/files/")
+    api.add_resource(Wrapping, "/users/<user_id>/wrapping/<path:unsafe_filename>","/users/<user_id>/files/")
     
     app.register_blueprint(api_blueprint, url_prefix="/api/v1")
 
 
 
 
+ 
 
-
-    if not os.path.exists("_db.created"):
+    
         
-        with app.app_context():
+    with app.app_context():
+        if not os.path.exists(DB_PATH + "/_db.created"):
             print("Creating database")
             db.create_all()
             with open( DB_PATH + "/_db.created", 'w') as fp:
                 pass
-    
+
 
     return app
 

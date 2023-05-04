@@ -22,7 +22,6 @@ def logout():
 @auth.route('/login')
 def login():
     next = request.args.get("next", default="", type=str)
-    print("login:" + url_quote(next))
     return render_template('login.html',next=url_quote(next))
 
 @auth.route('/login', methods=['POST'])
@@ -43,7 +42,6 @@ def login_post():
     # if the above check passes, then we know the user has the right credentials
     login_user(user, remember=remember)
     if next != "":
-        print(next)
         return redirect(next)
     else:
         return redirect(url_for('main.profile'))

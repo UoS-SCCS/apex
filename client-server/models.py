@@ -8,6 +8,7 @@ class User(UserMixin,db.Model):
     name = db.Column(db.String(1000))
     is_linked = db.Column(db.Boolean)
     oauth_uid = db.Column(db.Integer)
+    owner_public_key = db.Column(db.String())
 
 class OAuth2Token(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'),primary_key=True)
@@ -27,6 +28,14 @@ class OAuth2Token(db.Model):
             expires_at=self.expires_at,
         )
 
+class ClientAgentKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    public_key =db.Column(db.String())
+    user = db.relationship('User')    
+
 class OTP(db.Model):
     
     otp = db.Column(db.String(6), nullable=False)
@@ -39,8 +48,6 @@ class OTP(db.Model):
         default=lambda: int(time.time())
     )
     def is_expired(self):
-        print(self.otp_time)
-        print(time.time())
         return (self.otp_time + 300) < time.time()
 
     def get_otp(self):

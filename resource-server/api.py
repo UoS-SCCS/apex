@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User, Token
 from flask_login import login_user, login_required, logout_user
 from . import db
-from . import USER_FILES_PATH
+from . import USER_FILES_PATH, APEX_FILES_PATH
 from flask import request, g, send_from_directory
 from flask_restful import reqparse, abort, Resource, fields, marshal_with
 from werkzeug.utils import secure_filename
@@ -18,13 +18,12 @@ from pathvalidate import sanitize_filepath
 from werkzeug.datastructures import FileStorage
 import json
 import os
+import uuid
 from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
 from authlib.oauth2.rfc6750 import BearerTokenValidator
 
 class MyBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
-        print("TokenString:" + token_string)
-        
         return Token.query.filter_by(access_token=token_string).first()
 
 require_oauth = ResourceProtector()
@@ -62,7 +61,6 @@ def authenticate_user(scopes=None, optional=False):
                     return current_app.ensure_sync(f)(*args, **kwargs)
                 return f(*args, **kwargs)    
             else:
-                print("here")
                 deco = require_oauth(scopes,optional)(lambda: f(*args, **kwargs))
                 return deco()
                 
@@ -91,25 +89,32 @@ class Files(Resource):
     def _validate_path(self,user_dir, filepath):
         return os.path.commonprefix([user_dir, os.path.realpath(filepath)])
     
-
+    def _store_promise(self, target, file):
+        final_data = {}
+        final_data["target"]=target
+        final_data["type"]="save"
+        promise_id = str(uuid.uuid4())
+        promise_dir = os.path.join(APEX_FILES_PATH,promise_id)
+        if not os.path.exists(promise_dir):
+            os.makedirs(promise_dir)
+        promise_file = os.path.join(promise_dir,"file")
+        file.save(promise_file)
+        data_file = os.path.join(promise_dir,"data")
+        with open(data_file, 'w') as f:
+            json.dump(final_data,f)
+        return promise_id        
     @authenticate_user()
     @validate_user
     def get(self, user_id, unsafe_filename=None):
         try:
-            print(current_token.refresh_token)
-            #print("Unsafe:" + unsafe_filename)
             if unsafe_filename is None:
                 print("None filename")
-            #unsafe_filename = ""
-            print("UserFiles:" + USER_FILES_PATH)
             user_dir = os.path.join(USER_FILES_PATH,user_id)
-            print(user_dir)
             filepath = self._sanitize_path(unsafe_filename)
             if not self._validate_path(user_dir,filepath):
                 raise Exception("Invalid path")
                 
             target = os.path.join(user_dir,filepath)
-            print(target)
             if not os.path.exists(user_dir):
                 os.makedirs(user_dir)
             if os.path.exists(target):
@@ -139,18 +144,19 @@ class Files(Resource):
             
             target = os.path.join(user_dir,filepath)
             parser = reqparse.RequestParser()
-            print("Target:" + target)
             if os.path.exists(target):
                 return "Path already exists, use PUT instead of POST", 400
-            print(target)
             parser.add_argument('file', type=FileStorage, location='files',default=None)
-            
+            parser.add_argument("type",location='args')
             args = parser.parse_args()
-            print(args)
             if not args['file'] is None:
-                file = args['file']    
-                file.save(target)
-                return jsonify({"success":True})
+                if "type" in args and args["type"]=="APEX":
+                    promise_id = self._store_promise(target,file = args['file'])
+                    return jsonify({"success":True,"promise_id":promise_id,"promise":"direct"})
+                else:
+                    file = args['file']    
+                    file.save(target)
+                    return jsonify({"success":True})
             else:
                 os.mkdir(target)
                 return jsonify({"success":True})
@@ -183,11 +189,17 @@ class Files(Resource):
 
             #Must be a file
             parser.add_argument('file', type=FileStorage, location='files')
-            args = parser.parse_args()
 
-            file = args['file']    
-            file.save(target)
-            return jsonify({"success":True})            
+            parser.add_argument("type",location='args')
+            args = parser.parse_args()
+            if "type" in args and args["type"]=="APEX":
+                promise_id = self._store_promise(target,file = args['file'])
+                return jsonify({"success":True,"promise_id":promise_id,"promise":"direct"})
+            else:
+
+                file = args['file']    
+                file.save(target)
+                return jsonify({"success":True})            
         except Exception as e:
             print(e)
             abort(
@@ -228,3 +240,58 @@ class Files(Resource):
             )
 
 
+class Wrapping(Resource):
+
+    def _sanitize_path(self,filepath):
+        return sanitize_filepath(filepath)
+
+    def _validate_path(self,user_dir, filepath):
+        return os.path.commonprefix([user_dir, os.path.realpath(filepath)])
+    
+    def _store_promise(self, target, wrapped_agent_key, wrapped_resource_key):
+        final_data = {}
+        final_data["target"]=target
+        final_data["type"]="rewrap"
+        final_data["wrappedAgentKey"]=wrapped_agent_key
+        final_data["wrappedResourceKey"]= wrapped_resource_key
+        promise_id = str(uuid.uuid4())
+        promise_dir = os.path.join(APEX_FILES_PATH,promise_id)
+        if not os.path.exists(promise_dir):
+            os.makedirs(promise_dir)
+        data_file = os.path.join(promise_dir,"data")
+        with open(data_file, 'w') as f:
+            json.dump(final_data,f)
+        return promise_id        
+    
+    
+
+    @authenticate_user()
+    @validate_user
+    def post(self, user_id, unsafe_filename):
+        try:
+            user_dir = os.path.join(USER_FILES_PATH,user_id)
+            filepath = self._sanitize_path(unsafe_filename)
+            if not self._validate_path(user_dir,filepath):
+                raise Exception("Invalid file path")
+            
+            target = os.path.join(user_dir,filepath)
+            parser = reqparse.RequestParser()
+            parser.add_argument('wrappedAgentKey', type=str, location='json')            
+            parser.add_argument('wrappedKey', type=str, location='json')            
+            args = parser.parse_args()
+            
+            if not args['wrappedAgentKey'] is None and not args['wrappedAgentKey'] is None:
+                
+                wrapped_agent_key = args["wrappedAgentKey"]
+                wrapped_resource_key = args["wrappedKey"]
+                promise_id = self._store_promise(target,wrapped_agent_key,wrapped_resource_key)
+                return jsonify({"success":True,"promise_id":promise_id,"promise":"direct"})
+        except Exception as e:
+            print(e)
+            abort(
+                500,
+                message="There was an error while processing your request --> {}".format(
+                    e
+                ),
+            )
+    

@@ -16,14 +16,11 @@ notes = Blueprint('notes', __name__)
 @notes.route('/notes/create', methods=['POST'])
 @login_required
 def create_note():
-    print("in create")
     data = request.json
-    print(data)
     if "name" in data:
         empty_file = {"file": StringIO("{}")}
         resp = oauth.mydrive.post(str(current_user.oauth_uid) + '/files/NoteTaker/'+data["name"],files=empty_file)
         resp.raise_for_status()
-        print(resp.json())
         if resp.json()["success"] == True:
             return redirect(url_for("notes.get_notes"))        
     return "Error creating file", 500
@@ -49,7 +46,6 @@ def get_notes():
             return "Error creating directory", 500
         else:
             raise
-    print(notes)
     return jsonify(notes)
 
 @notes.route('/notes/note', methods=['GET'])
@@ -66,9 +62,7 @@ def get_note():
 @notes.route('/notes/save', methods=['PUT'])
 @login_required
 def save_note():
-    print("in create")
     data = request.json
-    print(data)
     if "name" in data and "data" in data:
         updated_file = {"file": StringIO(json.dumps(data["data"]))}
         resp = oauth.mydrive.put(str(current_user.oauth_uid) + '/files/NoteTaker/'+data["name"],files=updated_file)

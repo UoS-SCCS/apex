@@ -61,7 +61,6 @@ def link_authorise():
 @login_required
 def authorize():
     token = oauth.mydrive.authorize_access_token()
-    print(token)
     profile_resp = oauth.mydrive.get('http://localhost:5000/profile/')
     profile_resp.raise_for_status()
     profile = profile_resp.json()
@@ -71,11 +70,6 @@ def authorize():
     current_user.oauth_uid = profile["user_id"]
     db.session.commit()
     
-#    resp = oauth.mydrive.get('http://localhost:5000/api/v1/users/1/files/')
-#    resp.raise_for_status()
-#    print(resp.json())
-#    #profile = resp.json()
-#    print(token)
     # do something with the token and profile
     return redirect('/notes')
 
@@ -85,8 +79,5 @@ def test():
     #token = oauth.mydrive.authorize_access_token()
     resp = oauth.mydrive.get('https://localhost:5000/api/v1/users/1/files/')
     resp.raise_for_status()
-    print(resp.json())
-    #profile = resp.json()
-    #print(token)
     # do something with the token and profile
     return redirect('/')

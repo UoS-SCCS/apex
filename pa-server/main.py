@@ -15,3 +15,4 @@ def provider_agent():
 @main.route('/provider-agent/auth')
 def apex_auth():
     return render_template('auth.html')
+

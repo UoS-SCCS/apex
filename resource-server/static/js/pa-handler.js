@@ -9,7 +9,6 @@ function loadProviderAgent(){
 }
 window.addEventListener('message', function(e) {
     var message = e.data;
-    console.log(message);
     if(message=="complete"){
         openWindow.close();
         const current_URL = new URL(window.location.href);

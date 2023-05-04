@@ -8,3 +8,7 @@
 .hidden-elem {
     display:none!important;
 }
+
+.hero-body {
+    align-items: start !important;
+}

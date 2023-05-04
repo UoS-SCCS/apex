@@ -1,3 +1,7 @@
+const RSA = {
+    name: "RSA-OAEP",
+    hash: "SHA-256"
+}
 class KeyStore {
     constructor() {
         this._ks = {};
@@ -31,15 +35,31 @@ class KeyStore {
     async getPrivateKey(name) {
         if (name in this._ks) {
             const encodedKey = JSON.parse(this._ks[name]["privateKey"]);
-            const privateKey = await window.crypto.subtle.importKey("jwk", encodedKey, ECDSA, false, ["sign"]);
+            const privateKey = await window.crypto.subtle.importKey("jwk", encodedKey, ECDSA, true, ["sign"]);
             return privateKey;
         }
         return null;
     }
     async getPublicKey(name) {
         if (name in this._ks) {
-            const encodedKey = this._ks[name]["publicKey"];
-            const publicKey = await window.crypto.subtle.importKey("jwk", encodedKey, ECDSA, false, ["verify"]);
+            const encodedKey = JSON.parse(this._ks[name]["publicKey"]);
+            const publicKey = await window.crypto.subtle.importKey("jwk", encodedKey, ECDSA, true, ["verify"]);
+            return publicKey;
+        }
+        return null;
+    }
+    async getEncPrivateKey(name) {
+        if (name in this._ks) {
+            const encodedKey = JSON.parse(this._ks[name]["privateKey"]);
+            const privateKey = await window.crypto.subtle.importKey("jwk", encodedKey, RSA, true, ["decrypt", "unwrapKey"]);
+            return privateKey;
+        }
+        return null;
+    }
+    async getEncPublicKey(name) {
+        if (name in this._ks) {
+            const encodedKey = JSON.parse(this._ks[name]["publicKey"]);
+            const publicKey = await window.crypto.subtle.importKey("jwk", encodedKey, RSA, true, ["encrypt", "wrapKey"]);
             return publicKey;
         }
         return null;
@@ -51,9 +71,9 @@ class KeyStore {
         return null;
     }
     
-    setPrivateKey(name, key) {
+    async setPrivateKey(name, key) {
         const innerKs = this;
-        window.crypto.subtle.exportKey("jwk", key)
+        await window.crypto.subtle.exportKey("jwk", key)
             .then(function (encodedKey) {
                 if (!(name in innerKs._ks)){
                     innerKs._ks[name] = {};
@@ -65,9 +85,9 @@ class KeyStore {
                 console.log("Error saving private key:" + error);
             })
     }
-    setPublicKey(name, key) {
+    async setPublicKey(name, key) {
         const innerKs = this;
-        window.crypto.subtle.exportKey("jwk", key)
+        await window.crypto.subtle.exportKey("jwk", key)
             .then(function (encodedKey) {
                 if (!(name in innerKs._ks)){
                     innerKs._ks[name] = {};
@@ -78,6 +98,13 @@ class KeyStore {
             .catch(function (error) {
                 console.log("Error saving public key:" + error);
             });
+    }
+    setClientPublicKeySignature(signature){
+        this._ks["publicKeySignature"]=signature;
+        this.store();
+    }
+    getClientPublicKeySignature(){
+        return this._ks["publicKeySignature"];
     }
     store() {
         window.localStorage.setItem("keystore",JSON.stringify(this._ks));

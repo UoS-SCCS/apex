@@ -1,4 +1,15 @@
 const API_URL = "/api/v1/users/"
+
+window.addEventListener(
+    "load",
+    (event) => {
+
+        
+        getList();
+    },
+    false
+);
+
 var fs=null;
 function getList() {
     const userId = document.getElementById("user_id").value
@@ -7,11 +18,6 @@ function getList() {
     fs = new FileSystem(url,document.getElementById("root-files"),document.getElementById("filesPanel"));
     fs.refresh();
     
-    //fetch(url)
-    //    .then((response) => response.json())
-    //    .then((data) => { refresh(data); console.log(data) });
-    
-
 }
 function refresh(files) {
     const root = document.getElementById("root-files");
@@ -133,6 +139,26 @@ class FileSystem {
         this.filesRenderRoot = filesRenderRoot;
         this.currentFile = null;
     }
+    closeIfNotAncestor(target){
+        if(this.currentFile==null){
+            return;
+        }
+        var ancestor=false;
+        var parent = target;
+        while(parent != this){
+            if(parent == this.currentFile){
+                ancestor=true;
+                break;
+            }
+            parent = parent.getParent();
+        }
+        if(!ancestor && this.currentFile.isFolder()){
+            this.currentFile.closeFolder();
+        }
+    }
+    getCurrentFile(){
+        return this.currentFile;
+    }
     setCurrentFile(currentFile){
         this.currentFile = currentFile;
     }
@@ -151,7 +177,6 @@ class FileSystem {
     addFile(){
         if(this.currentFile!=null && this.currentFile.isFolder()){
             const input = document.getElementById("file");
-            console.log("here");
             var data = new FormData()
             data.append('file', input.files[0])
             
@@ -185,9 +210,7 @@ class FileSystem {
        
     }
     _processData(data){
-        console.log(data);
         this.rootFileObject = new FolderObject(data,this);
-        console.log(this);
         this.render();
     }
     getFileSystem(){
@@ -248,6 +271,7 @@ class FolderObject extends FileSystemObject {
         this.isOpen=false;
     }
     showFolder(evt){
+        this.getFileSystem().closeIfNotAncestor(this);
         if(this.isOpen && this.children.length>0){
             this.closeFolder();
             this.renderFilesView(this.getFileSystem().getFilesRenderRoot());
@@ -256,6 +280,23 @@ class FolderObject extends FileSystemObject {
             this.directoryViewChildrenElem.classList.add("showing");
             this.isOpen=true;
             this.renderFilesView(this.getFileSystem().getFilesRenderRoot());
+        }
+        this.getFileSystem().setCurrentFile(this);
+        evt.stopPropagation();
+    }
+    showFolderNoTreeChange(evt){
+        this.getFileSystem().closeIfNotAncestor(this);
+        
+        if(this.isOpen && this.children.length>0){
+            //this.closeFolder();
+            this.renderFilesView(this.getFileSystem().getFilesRenderRoot());
+        }else{
+            if(this.getParent() != this.getFileSystem()){
+                this.directoryViewIcon.className = "fa-solid fa-folder-open";
+                this.directoryViewChildrenElem.classList.add("showing");
+                this.isOpen=true;
+                this.renderFilesView(this.getFileSystem().getFilesRenderRoot());
+            }
         }
         this.getFileSystem().setCurrentFile(this);
         evt.stopPropagation();
@@ -275,6 +316,7 @@ class FolderObject extends FileSystemObject {
         }
     }
     renderFilesView(filesRenderRoot){
+        this.renderBreadcrumbs();
         filesRenderRoot.innerHTML="";
         for(const childItem of this.children){
             if(childItem.isFolder()){
@@ -328,7 +370,7 @@ class FolderObject extends FileSystemObject {
                 }
             }
             this.directoryViewElem.appendChild(this.directoryViewChildrenElem);
-            
+
         }else{
             this.directoryViewElem = document.createElement("ul");
             this.directoryViewElem.className = "menu-list";
@@ -339,10 +381,66 @@ class FolderObject extends FileSystemObject {
                     }
             }
         }
-            
+       
         
         
         return this.directoryViewElem;
+    }
+
+    renderBreadcrumbs(){
+        const breadcrumbs = document.getElementById("breadcrumbs");
+        breadcrumbs.innerHTML = "";
+        const breadcrumbList = document.createElement("ul");
+        breadcrumbs.appendChild(breadcrumbList);
+        
+        if(this.getParent() == this.getFileSystem()){
+            const breadcrumb = document.createElement("li");
+            breadcrumb.className="is-active";
+            const breadcrumbLink = document.createElement("a");
+            breadcrumbLink.setAttribute("aria-current","page");
+            breadcrumbLink.href="#"
+            breadcrumbLink.innerText= "Root";
+            breadcrumb.appendChild(breadcrumbLink);
+            breadcrumbList.appendChild(breadcrumb);
+        }else{
+            console.log("in non root");
+            const breadcrumb = document.createElement("li");
+            breadcrumb.className="is-active";
+            const breadcrumbLink = document.createElement("a");
+            breadcrumbLink.href="#"
+            breadcrumbLink.setAttribute("aria-current","page");
+            breadcrumbLink.innerText= this.getName()
+            breadcrumb.appendChild(breadcrumbLink);
+            
+            var nextParent = this.getParent();
+            
+            var parentBreadcrumbs = [];
+            while(nextParent.getParent()!=this.getFileSystem()){
+                const breadcrumb = document.createElement("li");
+                const breadcrumbLink = document.createElement("a");
+                breadcrumbLink.href="#"
+                breadcrumbLink.innerText= nextParent.getName();
+
+                breadcrumbLink.addEventListener("click",this.showFolderNoTreeChange.bind(nextParent));
+                breadcrumb.appendChild(breadcrumbLink);
+                //breadcrumbList.appendChild(breadcrumb);
+                parentBreadcrumbs.unshift(breadcrumb);
+                nextParent=nextParent.getParent();
+            }
+            const breadcrumbRoot = document.createElement("li");
+            const breadcrumbLinkRoot = document.createElement("a");
+            breadcrumbLinkRoot.href="#"
+            breadcrumbLinkRoot.innerText = "Root";
+            breadcrumbLinkRoot.addEventListener("click",this.showFolderNoTreeChange.bind(nextParent));
+            breadcrumbRoot.appendChild(breadcrumbLinkRoot);
+            //breadcrumbList.appendChild(breadcrumbRoot);
+            parentBreadcrumbs.unshift(breadcrumbRoot);
+            for(var i=0;i<parentBreadcrumbs.length;i++){
+                breadcrumbList.appendChild(parentBreadcrumbs[i]);
+            }
+            breadcrumbList.appendChild(breadcrumb);
+        }
+        
     }
     _processData(data){
         for(var i=0;i<data.length;i++){
@@ -360,6 +458,7 @@ class FolderObject extends FileSystemObject {
         this.getFileSystem().addFileObject(childFileObj);
     }
   }
+  
 class FileObject extends FileSystemObject{
     constructor(data, parentFileObject) {
         super(data,parentFileObject);

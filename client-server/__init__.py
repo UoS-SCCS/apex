@@ -17,8 +17,8 @@ def create_app():
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['SESSION_COOKIE_SAMESITE'] = "None"
     app.config['SESSION_COOKIE_SECURE'] = True
-    app.config["MYDRIVE_CLIENT_ID"]="8ECvqMzb6QZ27gstjT8pRVKi"
-    app.config["MYDRIVE_CLIENT_SECRET"]="MWjscIcTbijXSHYGhyMoAQplakdWGcHJ0Dw15hwNaIO0G5oC"
+    app.config["MYDRIVE_CLIENT_ID"]="4pbte8enfRyOwrwduTKXGAqc"
+    app.config["MYDRIVE_CLIENT_SECRET"]="MS0p3Uplh6MRenN6oBUtYWoQyWBfgEjD95BH9MxaHzdO7FVx"
     #app.config["MYDRIVE_REQUEST_TOKEN_URL"]="https://localhost:5000/oauth/token"
     app.config["MYDRIVE_ACCESS_TOKEN_URL"]="http://localhost:5000/oauth/token"
     app.config["MYDRIVE_REFRESH_TOKEN_URL"]="http://localhost:5000/oauth/token"
@@ -78,9 +78,10 @@ def create_app():
     from .apex import apex as apex_blueprint
     app.register_blueprint(apex_blueprint)
     
-    if not os.path.exists("_db.created"):
         
-        with app.app_context():
+        
+    with app.app_context():
+        if not os.path.exists(DB_PATH +"/_db.created"):
             print("Creating database")
             db.create_all()
             with open( DB_PATH + "/_db.created", 'w') as fp:

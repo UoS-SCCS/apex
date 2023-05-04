@@ -2,11 +2,7 @@
 
 {% block content %}
 <p>The application <strong>{{grant.client.client_name}}</strong> is requesting:
-    <strong>{{ grant.request.scope }}</strong>
-    </p>
-    
-    <p>
-      from You - a.k.a. <strong>{{ user.username }}</strong>
+    <strong>{{ grant.request.scope }}</strong> access to your account
     </p>
     
     <form action="" method="post">

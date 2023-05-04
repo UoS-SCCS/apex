@@ -6,12 +6,6 @@ function getList() {
 
     fs = new FileSystem(url,document.getElementById("root-files"),document.getElementById("filesPanel"));
     fs.refresh();
-    
-    //fetch(url)
-    //    .then((response) => response.json())
-    //    .then((data) => { refresh(data); console.log(data) });
-    
-
 }
 function refresh(files) {
     const root = document.getElementById("root-files");
@@ -152,7 +146,7 @@ class FileSystem {
     addFile(){
         if(this.currentFile!=null && this.currentFile.isFolder()){
             const input = document.getElementById("file");
-            console.log("here");
+            
             var data = new FormData()
             data.append('file', input.files[0])
             
@@ -186,9 +180,9 @@ class FileSystem {
        
     }
     _processData(data){
-        console.log(data);
+        
         this.rootFileObject = new FolderObject(data,this);
-        console.log(this);
+        
         this.render();
     }
     getFileSystem(){

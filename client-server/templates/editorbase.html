@@ -79,6 +79,7 @@
             <ul id="slide-out" class="sidenav sidenav-fixed show-menu-bar">
                 {% if current_user.is_linked %}
                 <li><a class="btn" onclick="createNewNote()" href="#">Create New Note</a></li>
+                <li><a class="btn" onclick="createNewAPEXNote()" href="#">Create New APEX Note</a></li>
                 {% else %}
                 <li><a class="btn disabled">Create New Note</a></li>
                 {% endif %}
