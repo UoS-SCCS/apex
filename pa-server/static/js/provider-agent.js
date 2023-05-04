@@ -325,12 +325,18 @@ function constructKeySignature(otp) {
     output["x"] = encodedKey.x;
     output["y"] = encodedKey.y;
     const jsonStr = JSON.stringify(output, Object.keys(output).sort());
-    generateHMAC(otp, jsonStr, sendKeyHMAC);
+    const encodedEncPublicKey = JSON.parse(keystore.getEncodedPublicKey("encryption"));
+    const encoutput = {};
+    encoutput["e"] = encodedEncPublicKey["e"];
+    encoutput["kty"] = encodedEncPublicKey["kty"];
+    encoutput["n"] = encodedEncPublicKey["n"];
+    const jsonEncStr = JSON.stringify(encoutput, Object.keys(encoutput).sort());
+    generateHMAC(otp, jsonStr+jsonEncStr, sendKeyHMAC);
 }
 function sendKeyHMAC(hmac) {
     const data = {};
     data["ownerEncPublicKey"] = keystore.getEncodedPublicKey("encryption");
-    data["ownerEncPublicKeySignature"] = keystore.getClientPublicKeySignature();
+    //data["ownerEncPublicKeySignature"] = keystore.getClientPublicKeySignature();
     data["publicKey"] = keystore.getEncodedPublicKey("signing");
     data["hmac"] = hmac;
     fetch(receivedData["pk_endpoint"], {

@@ -41,10 +41,11 @@ def pk_endpoint():
         return Response(status=500, mimetype="application/json", response=json.dumps(res))
     else:
         publicKey = json.loads(data["publicKey"])
+        json_owner_public_key = json.loads(data["ownerEncPublicKey"]);
         encoded_otp = otp.get_otp().encode()
         encoded_public_key = get_jwk_representation(publicKey).encode()
-        
-        hmac_obj = hmac.new(encoded_otp,encoded_public_key,"SHA512")
+        jwk_owner_enc_public_key = get_rsa_jwk_representation(json_owner_public_key).encode()
+        hmac_obj = hmac.new(encoded_otp,encoded_public_key+jwk_owner_enc_public_key,"SHA512")
         
         if not hmac.compare_digest(data["hmac"],hmac_obj.hexdigest()):
             res = {}
@@ -52,27 +53,23 @@ def pk_endpoint():
             res["code"]=3
             res["msg"] = "HMAC Verification Failed"
             return Response(status=500, mimetype="application/json", response=json.dumps(res))
-        
+        current_user.owner_public_key = data["ownerEncPublicKey"]
         #owner_public_key
-        print(data)
-        json_owner_public_key = json.loads(data["ownerEncPublicKey"]);
-        signature_bytes = base64.urlsafe_b64decode(data["ownerEncPublicKeySignature"])
-        jwk_owner_public_key = get_rsa_jwk_representation(json_owner_public_key)
-        curve = None
-        if publicKey["crv"]=="P-256":
-            curve =SECP256R1()
-        print(int.from_bytes(base64.urlsafe_b64decode(publicKey["x"]+"=="),"big"))
-        print(int.from_bytes(base64.urlsafe_b64decode(publicKey["y"]+"=="), "big"))
-        print(signature_bytes)
-        ec_public_key = (EllipticCurvePublicNumbers( int.from_bytes(base64.urlsafe_b64decode(publicKey["x"]+"=="), "big"), int.from_bytes(base64.urlsafe_b64decode(publicKey["y"]+"=="), "big"),curve)).public_key()
-        print(jwk_owner_public_key)
-        print(len(signature_bytes))
-        dss_sig = encode_dss_signature(int.from_bytes(signature_bytes[0:32], "big"),int.from_bytes(signature_bytes[32:], "big"))
-        try:
-            ec_public_key.verify(dss_sig,jwk_owner_public_key.encode('utf-8'),ec.ECDSA(hashes.SHA256()))
-            current_user.owner_public_key = data["ownerEncPublicKey"]
-        except InvalidSignature:
-            print("signature checking failed")
+        #print(data)
+        ##Previous Signature Checking
+        #json_owner_public_key = json.loads(data["ownerEncPublicKey"]);
+        #signature_bytes = base64.urlsafe_b64decode(data["ownerEncPublicKeySignature"])
+        #jwk_owner_public_key = get_rsa_jwk_representation(json_owner_public_key)
+        #curve = None
+        #if publicKey["crv"]=="P-256":
+        #    curve =SECP256R1()
+        #ec_public_key = (EllipticCurvePublicNumbers( int.from_bytes(base64.urlsafe_b64decode(publicKey["x"]+"=="), "big"), int.from_bytes(base64.urlsafe_b64decode(publicKey["y"]+"=="), "big"),curve)).public_key()
+        #dss_sig = encode_dss_signature(int.from_bytes(signature_bytes[0:32], "big"),int.from_bytes(signature_bytes[32:], "big"))
+        #try:
+        #    ec_public_key.verify(dss_sig,jwk_owner_public_key.encode('utf-8'),ec.ECDSA(hashes.SHA256()))
+        #    current_user.owner_public_key = data["ownerEncPublicKey"]
+        #except InvalidSignature:
+        #    print("signature checking failed")
 
         agent_key = ClientAgentKey(user_id=current_user.id,public_key=json.dumps(publicKey))
         db.session.add(agent_key)
