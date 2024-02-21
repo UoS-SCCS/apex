@@ -24,9 +24,12 @@
     <link rel="stylesheet" href="./css/style.css" />
     <meta name="theme-color" content="#31d53d" />
   </head>
-  <body>
+  <body onload="loadEvents()">
     <capacitor-welcome></capacitor-welcome>
-
+    <button id="authButton" >Login with OAuth</button>
+    <button onclick="window.signup.onOAuthRefreshBtnClick()">Refresh token</button>
+    <button onclick="window.signup.onLogoutClick()">Logout OAuth</button>
     <script src="./js/capacitor-welcome.js" type="module"></script>
+    <script src="./js/oauth-client.js" type="module"></script>
   </body>
 </html>

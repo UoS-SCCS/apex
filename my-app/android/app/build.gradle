@@ -23,7 +23,10 @@ android {
         }
     }
 }
-
+android.defaultConfig.manifestPlaceholders = [
+  // change to the 'custom_url_scheme' value in your strings.xml. They need to be the same. e.g.
+  "appAuthRedirectScheme": "com.example.app"
+]
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
