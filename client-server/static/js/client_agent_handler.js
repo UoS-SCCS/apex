@@ -1,9 +1,10 @@
+const CA_URL=""
 window.addEventListener(
     "load",
     (event) => {
 
         
-        modalDiv = document.createElement("div");
+        /**modalDiv = document.createElement("div");
         modalDiv.id="modalDiv";
         modalDiv.className="modal-background";
         iframeDiv = document.createElement("div");
@@ -15,7 +16,7 @@ window.addEventListener(
         clientAgentFrame.scrolling = "no";
         iframeDiv.appendChild(clientAgentFrame)
         modalDiv.appendChild(iframeDiv);
-        document.body.appendChild(modalDiv);
+        document.body.appendChild(modalDiv);*/
     },
     false
 );
@@ -40,7 +41,7 @@ function processMessage(data) {
         send["data"] = dataToProcess;        
         send["process"] = data["process"];
         const sendMsg = JSON.stringify(send);
-        clientAgentFrame.contentWindow.postMessage(sendMsg, "*");
+        clientAgentFrame.postMessage(sendMsg, "*");//contentWindow
     }else if(data["action"]=="Complete" && data["process"]=="Register"){
         closeClientAgent();
         refreshNotesList();
@@ -55,15 +56,20 @@ function processMessage(data) {
     }
 }
 function startClientAgent(action, data) {
-    modalDiv.style.display = "block";
+    /**modalDiv.style.display = "block";
     iframeDiv.classList.add("ca-show");
     dataToProcess = data;
     clientAgentFrame.src = "/clientAgent?action=" + action;
     iframeDiv.classList.add("ca-show");
-    iframeDiv.classList.remove("ca-hidden");
+    iframeDiv.classList.remove("ca-hidden");**/
+    dataToProcess = data;
+    var left = (screen.width / 2) - (500 / 2);
+    var top = (screen.height / 2) - (500 / 2);
+    clientAgentFrame = window.open("/clientAgent?action=" + action,"CAWindow","width=500px,height=500px, top=" + top + ", left=" + left)
 }
 function closeClientAgent() {
-    iframeDiv.classList.add("ca-hidden");
+    /**iframeDiv.classList.add("ca-hidden");
     iframeDiv.classList.remove("ca-show");
-    modalDiv.style.display = "none";
+    modalDiv.style.display = "none";**/
+    clientAgentFrame.close();
 }

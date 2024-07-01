@@ -6,6 +6,7 @@ from authlib.integrations.flask_client import OAuth
 from .models import OAuth2Token, OTP
 import secrets
 import time
+import hmac
 oauth = OAuth()
 
 def fetch_mydrive_token():
@@ -33,15 +34,18 @@ def config_oauth_client(app):
 
 
 oauth_client = Blueprint('oauth_client', __name__)
-
+CRS = "APEXNotesLink"
 @oauth_client.route('/link')
 @login_required
 def link():
     generated_otp= str(secrets.randbelow(10000)).rjust(4, '0')
+    encoded_otp = generated_otp.encode()
+    hmac_obj = hmac.new(encoded_otp,CRS.encode(),"SHA512")
     otp_code = OTP(
         otp=generated_otp,
         user_id=current_user.get_id(),
-        otp_time= int(time.time())
+        otp_time= int(time.time()),
+        request_id=hmac_obj.hexdigest()
     )
     db.session.merge(otp_code)
     db.session.commit()
@@ -61,7 +65,7 @@ def link_authorise():
 @login_required
 def authorize():
     token = oauth.mydrive.authorize_access_token()
-    profile_resp = oauth.mydrive.get('http://localhost:5000/profile/')
+    profile_resp = oauth.mydrive.get('https://resource.apex.dev.castellate.com:5001/profile/')
     profile_resp.raise_for_status()
     profile = profile_resp.json()
     newtoken = OAuth2Token(user_id=current_user.get_id(),token_type=token["token_type"],access_token=token["access_token"],expires_at=token["expires_at"],refresh_token=token["refresh_token"],scope=token["scope"],oauth_uid=profile["user_id"])
@@ -77,7 +81,7 @@ def authorize():
 @login_required
 def test():
     #token = oauth.mydrive.authorize_access_token()
-    resp = oauth.mydrive.get('https://localhost:5000/api/v1/users/1/files/')
+    resp = oauth.mydrive.get('https://resource.apex.dev.castellate.com:5001/api/v1/users/1/files/')
     resp.raise_for_status()
     # do something with the token and profile
     return redirect('/')

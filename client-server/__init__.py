@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_cors import CORS
 from .keystore import KeyStore
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 import os
 import logging
 # init SQLAlchemy so we can use it later in our models
@@ -13,19 +15,23 @@ KEY_STORE = None
 def create_app():
     global KEY_STORE
     app = Flask(__name__)
-    CORS(app,origins=["http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000"],supports_credentials=True)
+ 
+    app.wsgi_app = ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+    )
+    CORS(app,origins=["http://localhost","http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000","http://10.0.2.2:5000","https://client.apex.dev.castellate.com:5001","https://resource.apex.dev.castellate.com:5001","https://resource.apex.dev.castellate.com:5002"],supports_credentials=True)
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['SESSION_COOKIE_SAMESITE'] = "None"
     app.config['SESSION_COOKIE_SECURE'] = True
     app.config["MYDRIVE_CLIENT_ID"]="4pbte8enfRyOwrwduTKXGAqc"
     app.config["MYDRIVE_CLIENT_SECRET"]="MS0p3Uplh6MRenN6oBUtYWoQyWBfgEjD95BH9MxaHzdO7FVx"
     #app.config["MYDRIVE_REQUEST_TOKEN_URL"]="https://localhost:5000/oauth/token"
-    app.config["MYDRIVE_ACCESS_TOKEN_URL"]="http://localhost:5000/oauth/token"
-    app.config["MYDRIVE_REFRESH_TOKEN_URL"]="http://localhost:5000/oauth/token"
-    app.config["MYDRIVE_AUTHORIZE_URL"]="http://localhost:5000/oauth/authorize?isAPEX=True"
+    app.config["MYDRIVE_ACCESS_TOKEN_URL"]="https://resource.apex.dev.castellate.com:5001/oauth/token"
+    app.config["MYDRIVE_REFRESH_TOKEN_URL"]="https://resource.apex.dev.castellate.com:5001/oauth/token"
+    app.config["MYDRIVE_AUTHORIZE_URL"]="https://resource.apex.dev.castellate.com:5001/oauth/authorize?isAPEX=True"
     #app.config["MYDRIVE_ACCESS_TOKEN_PARAMS"]= {"grant_type":"authorization_code"}
     app.config["MYDRIVE_CLIENT_KWARGS"]={'scope': 'full'}
-    app.config["MYDRIVE_API_BASE_URL"]="http://localhost:5000/api/v1/users/"
+    app.config["MYDRIVE_API_BASE_URL"]="https://resource.apex.dev.castellate.com:5001/api/v1/users/"
     logging.basicConfig(level=logging.DEBUG, filename='loginDEBUG.log', filemode='a')
     logging.getLogger('flask_cors').level = logging.DEBUG
     #NoteTaker

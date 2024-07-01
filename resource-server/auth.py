@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash,
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User, ClientCertificate
 from flask_login import login_user, login_required, logout_user, current_user
-from werkzeug.urls import url_quote
+#from werkzeug.urls import url_quote
+import urllib.parse
 from . import db
 import json
 auth = Blueprint('auth', __name__)
@@ -26,10 +27,11 @@ def logout():
 @auth.route('/login')
 def login():
     next = request.args.get("next", default="", type=str)
-    return render_template('login.html',next=url_quote(next))
+    return render_template('login.html',next=urllib.parse.quote_plus(next))
 
 @auth.route('/login', methods=['POST'])
 def login_post():
+    print("in login")
     # login code goes here
     email = request.form.get('email')
     password = request.form.get('password')
@@ -41,8 +43,10 @@ def login_post():
     # take the user-supplied password, hash it, and compare it to the hashed password in the database
     if not user or not check_password_hash(user.password, password):
         flash('Please check your login details and try again.')
+        print("incorrect login")
         return redirect(url_for('auth.login')) # if the user doesn't exist or password is wrong, reload the page
 
+    print("login correct will redirect to profile")
     # if the above check passes, then we know the user has the right credentials
     login_user(user, remember=remember)
     if next != "":
@@ -68,7 +72,7 @@ def signup_post():
         return redirect(url_for('auth.signup'))
 
     # create a new user with the form data. Hash the password so the plaintext version isn't saved.
-    new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256'))
+    new_user = User(email=email, name=name, password=generate_password_hash(password))
 
     # add the new user to the database
     db.session.add(new_user)

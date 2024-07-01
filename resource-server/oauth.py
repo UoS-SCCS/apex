@@ -1,19 +1,24 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
+from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, abort
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import Client, Token, User, AuthorizationCode
+from .models import Client, Token, User, AuthorizationCode, Device, DeviceAuth
 from werkzeug.security import gen_salt
 from flask import request, render_template
 from authlib.integrations.flask_oauth2 import AuthorizationServer
 from flask_login import login_required, current_user
+from flask import stream_with_context, Response
 from . import db
+import secrets
 import time
 import json
 from authlib.oauth2.rfc6749 import grants
-
+from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.integrations.flask_oauth2 import ResourceProtector, current_token
 
 from authlib.oauth2.rfc6750 import BearerTokenValidator
-
+from . import fcm
+from firebase_admin import credentials
+from firebase_admin import messaging
+from firebase_admin.exceptions import FirebaseError
 class MyBearerTokenValidator(BearerTokenValidator):
     def authenticate_token(self, token_string):
         return Token.query.filter_by(access_token=token_string).first()
@@ -46,15 +51,20 @@ class RefreshTokenGrant(grants.RefreshTokenGrant):
 
 
 class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
-    
+    TOKEN_ENDPOINT_AUTH_METHODS = ['client_secret_basic', 'client_secret_post', 'none']
+
     def save_authorization_code(self, code, request):
         client = request.client
+        code_challenge = request.data.get('code_challenge')
+        code_challenge_method = request.data.get('code_challenge_method')
         auth_code = AuthorizationCode(
             code=code,
             client_id=client.client_id,
             redirect_uri=request.redirect_uri,
             scope=request.scope,
             user_id=request.user.id,
+            code_challenge=code_challenge,
+            code_challenge_method=code_challenge_method,
         )
         db.session.add(auth_code)
         db.session.commit()
@@ -96,7 +106,7 @@ class PasswordGrant(grants.ResourceOwnerPasswordCredentialsGrant):
 
 def config_oauth(app):
     server.init_app(app)
-    server.register_grant(AuthorizationCodeGrant)
+    server.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])
     server.register_grant(RefreshTokenGrant)
 
 
@@ -163,6 +173,19 @@ def create_client():
 
 
 
+#@oauth.route('/oauth/pa-auth-check', methods=['POST'])
+#@login_required
+#def pa_auth_check():
+#    data =request.get_json()
+#    if "uid" in data:
+#        rand_id = data["uid"]
+#        device_auth = DeviceAuth.query.filter_by(user_id=current_user.get_id(),one_time_url=rand_id,complete=0).first()
+#        if device_auth:
+#            device_auth.complete=1
+#            print("Device Auth Sent")
+#            db.session.commit()
+#        abort(500,"URL Incorrect or Timed Out")    
+#    abort(500,"Missing parameters")
 
 
 @oauth.route('/oauth/authorize', methods=['GET', 'POST'])
@@ -173,29 +196,82 @@ def authorize():
     # form on this authorization page.
     if request.method == 'GET':
         is_apex = request.args.get("isAPEX", "")
-        if is_apex=="True":
-            grant = server.get_consent_grant(end_user=current_user)
-            client = grant.client
-            json_data = {"action":"authorize","pk_endpoint":client.pk_endpoint}
-            return render_template(
-                'load_pa.html', data=json.dumps(json_data),
-            )
-        
-        else:
-            grant = server.get_consent_grant(end_user=current_user)
-            client = grant.client
-            scope = client.get_allowed_scope(grant.request.scope)
 
-            # You may add a function to extract scope into a list of scopes
-            # with rich information, e.g.
-            scopes = scope# describe_scope(scope)  # returns [{'key': 'email', 'icon': '...'}]
-            return render_template(
-                'authorize.html',
-                grant=grant,
-                user=current_user,
-                client=client,
-                scopes=scopes,
-            )
+        if request.headers.get('accept') == 'text/event-stream':
+            print("In Event Streamer")
+            if is_apex=="True":
+                grant = server.get_consent_grant(end_user=current_user)
+                client = grant.client
+                json_data = {"action":"authorize","pk_endpoint":client.pk_endpoint}
+                devices = Device.query.filter_by(user_id=current_user.get_id()).all()
+                if len(devices) == 0:
+                    return jsonify({"success":False,"msg":"No Devices Registered"})
+                rand_id = secrets.token_urlsafe(48)
+                dv_auth = DeviceAuth(user_id=current_user.get_id(),one_time_url=rand_id,complete=0)
+                db.session.add(dv_auth)
+                db.session.commit()
+                json_data["one_time_url"] = rand_id
+                for device in devices:
+                    registration_token = device.fcm_id
+                    #Payload sent with high priority
+                    message = messaging.Message(
+                        data=json_data,
+                        token=registration_token,
+                        android=messaging.AndroidConfig(priority="high")
+                    )
+                    print("sending FCM Message")
+                    # Send a message to the device corresponding to the provided
+                    # registration token.
+                    fcm_response = messaging.send(message)
+                def generate(rand_id, user):
+                    print("in generator")
+                    completed=False
+                    while(not completed):
+                        check = DeviceAuth.query.filter_by(user_id=user,one_time_url=rand_id,complete=1).first()
+                        if check:
+                            completed=True
+                            print("Authorisation Confirmed")
+                            data_to_send = "data:" + json.dumps({"success":True,"msg":"PA Authorised"})+ "\n\n"
+                            yield data_to_send
+                        else:
+                            print("Authorisation Still Waiting")
+                            data_to_send = "data:" + json.dumps({"success":False,"msg":"Awaiting Response"}) + "\n\n"
+                            yield data_to_send
+                            time.sleep(5)
+                return Response(stream_with_context(generate(rand_id,current_user.get_id())), mimetype='text/event-stream')
+            else:
+                abort(500,message="Non-APEX callers should not use the streaming API")                
+        else:
+            if is_apex=="True":
+                grant = server.get_consent_grant(end_user=current_user)
+                client = grant.client
+                devices = Device.query.filter_by(user_id=current_user.get_id()).all()
+                json_data = {"action":"authorize","pk_endpoint":client.pk_endpoint}
+                if len(devices) == 0:
+                    json_data["method"]="Direct"
+                else:
+                    json_data["method"]="Intermediary"
+
+                return render_template(
+                    'load_pa.html', data=json.dumps(json_data),
+                )
+
+            
+            else:
+                grant = server.get_consent_grant(end_user=current_user)
+                client = grant.client
+                scope = client.get_allowed_scope(grant.request.scope)
+
+                # You may add a function to extract scope into a list of scopes
+                # with rich information, e.g.
+                scopes = scope# describe_scope(scope)  # returns [{'key': 'email', 'icon': '...'}]
+                return render_template(
+                    'authorize.html',
+                    grant=grant,
+                    user=current_user,
+                    client=client,
+                    scopes=scopes,
+                )
     confirmed = request.form['confirm']
     if confirmed:
         # granted by resource owner

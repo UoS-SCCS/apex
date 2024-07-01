@@ -1,3 +1,4 @@
+const PROV_URL = "https://resource.apex.dev.castellate.com:5001/"
 window.onload = function () {
     initProviderAgent();
     keystore = new KeyStore();
@@ -92,7 +93,7 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     output["valid"] = true
     const returnData = {};
     returnData["reWrappedResourceKey"] = reEncryptedData
-    returnData["promise"] = await fetch("http://localhost:5000/promise-fulfilment", {
+    returnData["promise"] = await fetch(PROV_URL +"promise-fulfilment", {
         method: "POST",
         mode: "cors",
         cache: "no-cache",
@@ -114,7 +115,7 @@ function retrieve(data) {
 
     var promiseData = {}
     promiseData["promise_id"] = data["promise_id"]
-    fetch("http://localhost:5000/promise?" + new URLSearchParams(promiseData), {
+    fetch(PROV_URL +"promise?" + new URLSearchParams(promiseData), {
         method: "GET",
         mode: "cors",
         cache: "no-cache",
@@ -160,7 +161,7 @@ function save(data) {
 
     var promiseData = {}
     promiseData["promise_id"] = data["promise_id"]
-    fetch("http://localhost:5000/promise?" + new URLSearchParams(promiseData), {
+    fetch(PROV_URL + "promise?" + new URLSearchParams(promiseData), {
         method: "GET",
         mode: "cors",
         cache: "no-cache",
@@ -271,7 +272,7 @@ function save(data) {
 
             //TODO this is result of signature check
             output["valid"] = true
-            return fetch("http://localhost:5000/promise-fulfilment", {
+            return fetch(PROV_URL +"promise-fulfilment", {
                 method: "POST",
                 mode: "cors",
                 cache: "no-cache",
@@ -464,7 +465,7 @@ async function verifyClientHmac(result) {
         sendSignatureToServer(currentURLHost, signature);
     });
 }
-const PROVIDER_CERT_ENDPOINT = "http://127.0.0.1:5000/client_cert_endpoint";
+const PROVIDER_CERT_ENDPOINT = PROV_URL + "client_cert_endpoint";
 function sendSignatureToServer(currentHost, signature) {
     var data = {};
     data["hostname"] = currentHost;

@@ -21,19 +21,20 @@ from . import KEY_STORE
 apex = Blueprint('apex', __name__)
 
 
+#@login_required
 @apex.route('/pk_endpoint', methods=['POST'])
-@login_required
 def pk_endpoint():
     data = request.json
-    if not "publicKey" in data or not "hmac" in data:
+    print("In public key endpoint")
+    print(data)
+    if not "publicKey" in data or not "hmac" in data or not "requestId" in data:
         res = {}
         res["error"]=True
         res["code"]=1
         res["msg"] = "Parameters missing"
         return Response(status=500, mimetype="application/json", response=json.dumps(res))
-    otp = OTP.query.get(current_user.get_id())
+    otp = OTP.query.get(data["requestId"])
     if otp is None or otp.is_expired():
-
         res = {}
         res["error"]=True
         res["code"]=2
@@ -45,6 +46,8 @@ def pk_endpoint():
         encoded_otp = otp.get_otp().encode()
         encoded_public_key = get_jwk_representation(publicKey).encode()
         jwk_owner_enc_public_key = get_rsa_jwk_representation(json_owner_public_key).encode()
+        print("RSAEncryptedPublicKey")
+        print(jwk_owner_enc_public_key)
         hmac_obj = hmac.new(encoded_otp,encoded_public_key+jwk_owner_enc_public_key,"SHA512")
         
         if not hmac.compare_digest(data["hmac"],hmac_obj.hexdigest()):
@@ -53,7 +56,17 @@ def pk_endpoint():
             res["code"]=3
             res["msg"] = "HMAC Verification Failed"
             return Response(status=500, mimetype="application/json", response=json.dumps(res))
-        current_user.owner_public_key = data["ownerEncPublicKey"]
+        #There is no current user hence why the key isn't being saved
+        #current_user.owner_public_key = data["ownerEncPublicKey"]
+        user = User.query.get(otp.get_user_id())
+        if user is None:
+            res = {}
+            res["error"]=True
+            res["code"]=2
+            res["msg"] = "User Not Found"
+            return Response(status=500, mimetype="application/json", response=json.dumps(res))
+        user.owner_public_key = data["ownerEncPublicKey"]
+
         #owner_public_key
         #print(data)
         ##Previous Signature Checking
@@ -70,8 +83,8 @@ def pk_endpoint():
         #    current_user.owner_public_key = data["ownerEncPublicKey"]
         #except InvalidSignature:
         #    print("signature checking failed")
-
-        agent_key = ClientAgentKey(user_id=current_user.id,public_key=json.dumps(publicKey))
+        
+        agent_key = ClientAgentKey(user_id=otp.get_user_id(),public_key=json.dumps(publicKey))
         db.session.add(agent_key)
         db.session.commit()
         json_pub_key = KEY_STORE.get_public_key_json("signing")
@@ -113,7 +126,7 @@ def save_apex():
     client_sig["s"] = hex(decoded_sig[1])
     output = {}
     output["userId"]=str(current_user.oauth_uid)
-    output["host"]="127.0.0.2"
+    output["host"]="client.apex.dev.castellate.com"
     output["wrappedKey"]=wrapped_key
     output["encryptedData"]=encrypted_data
     output["clientSignature"]=client_sig#base64.b64encode(signature).decode('utf-8')
@@ -159,7 +172,7 @@ def wrap_key_apex():
     client_sig={}
     client_sig["r"] = hex(decoded_sig[0])
     client_sig["s"] = hex(decoded_sig[1])
-    json_data["host"]="127.0.0.2"
+    json_data["host"]="client.apex.dev.castellate.com"
     json_data["clientSignature"]=client_sig
     json_data["promiseFulfilment"]=["direct"]
     headers = {'content-type': 'application/json'}

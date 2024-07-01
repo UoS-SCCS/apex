@@ -3,16 +3,22 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_restful import Api
 from flask_cors import CORS
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import messaging
+from firebase_admin.exceptions import FirebaseError
+
 import logging
 import os
 # init SQLAlchemy so we can use it later in our models
 db = SQLAlchemy()
+fcm = None
 DB_PATH = ""
 USER_FILES_PATH = ""
 APEX_FILES_PATH = ""
 def create_app():
     app = Flask(__name__)
-    CORS(app,origins=["http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000"],supports_credentials=True)
+    CORS(app,origins=["http://127.0.0.1:5000", "http://127.0.0.3:5000","http://localhost:5000","http://10.0.2.2:5000","http://localhost","https://client.apex.dev.castellate.com:5001","https://resource.apex.dev.castellate.com:5001","https://resource.apex.dev.castellate.com:5002"],supports_credentials=True)
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.config['SESSION_COOKIE_SAMESITE'] = "None"
     app.config['SESSION_COOKIE_SECURE'] = True
@@ -34,6 +40,10 @@ def create_app():
         if not os.path.exists(APEX_FILES_PATH):
             os.makedirs(APEX_FILES_PATH)
         
+        google_credential = credentials.Certificate("./apex-dev-b8f38-firebase-adminsdk-2k86m-1860cc628e.json")
+        fcm = firebase_admin.initialize_app(google_credential)
+
+
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////' + DB_PATH + '/db.sqlite'
     
     login_manager = LoginManager()
@@ -70,11 +80,13 @@ def create_app():
 
 
     from .api import api as api_blueprint
-    from .api import Files, Wrapping
+    from .api import Files, Wrapping, Profile, ProviderAgent, ProviderAgentSetup
     api = Api(api_blueprint)
     api.add_resource(Files, "/users/<user_id>/files/<path:unsafe_filename>","/users/<user_id>/files/")
     api.add_resource(Wrapping, "/users/<user_id>/wrapping/<path:unsafe_filename>","/users/<user_id>/files/")
-    
+    api.add_resource(Profile, "/users/")
+    api.add_resource(ProviderAgent, "/users/<user_id>/provider-agent/")
+    api.add_resource(ProviderAgentSetup, "/users/<user_id>/provider-agent-setup/")
     app.register_blueprint(api_blueprint, url_prefix="/api/v1")
 
 

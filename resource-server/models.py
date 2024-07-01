@@ -12,7 +12,31 @@ class User(UserMixin,db.Model):
 
     def get_user_id(self):
         return self.get_id()
+
+class Device(db.Model):
+    id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    user = db.relationship('User')
+    fcm_id=db.Column(db.String(200))
+    device_id = db.Column(db.String(100))
     
+class DeviceAuth(db.Model):
+    id = db.Column(db.Integer, primary_key=True) # primary keys are required by SQLAlchemy
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    user = db.relationship('User')
+    one_time_url =db.Column(db.String(100))
+    complete = db.Column(db.Integer)
+class ClientProviderAgent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE')
+    )
+    user = db.relationship('User')
+    fcm_id = db.Column(db.String())
 
 class Client(db.Model, OAuth2ClientMixin):
     id = db.Column(db.Integer, primary_key=True)

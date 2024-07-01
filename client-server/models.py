@@ -39,20 +39,29 @@ class ClientAgentKey(db.Model):
 class OTP(db.Model):
     
     otp = db.Column(db.String(6), nullable=False)
+    request_id = db.Column(db.String, nullable=False, unique=True, primary_key=True)
     user_id = db.Column(
-        db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), unique=True, primary_key=True
+        db.Integer
     )
-    user = db.relationship('User')
+    
+    #user_id = db.Column(
+    #    db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), unique=False
+    #)
+    #user = db.relationship('User')
     otp_time = db.Column(
         db.Integer, nullable=False,
         default=lambda: int(time.time())
     )
+    def get_user_id(self):
+        return self.user_id
     def is_expired(self):
         return (self.otp_time + 300) < time.time()
 
     def get_otp(self):
         return self.otp
-
+    def get_request_id(self):
+        return self.request_id
+    
     def is_match(self,challenge):
         if self.otp == self.challenge:
             return True
