@@ -1,4 +1,4 @@
-package com.example.app;
+package com.castellate.dev.apex;
 
 import com.getcapacitor.BridgeActivity;
 
