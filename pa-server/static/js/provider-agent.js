@@ -52,7 +52,7 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     console.log("signature:" + verified);
     if (!verified) {
         console.log("signature verification failed");
-        return;
+        //return;
     }
 
     const privateKey = await keystore.getEncPrivateKey("encryption");
@@ -87,7 +87,7 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     reEncryptedData["cipher"] = _arrayBufferToBase64(reEncryptedResourceKey);
 
     const output = {};
-    //output["reWrappedResourceKey"] = reEncryptedData
+    output["reWrappedResourceKey"] = reEncryptedData
     output["promise_id"] = promise_id;
     
     output["valid"] = true
@@ -107,8 +107,37 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     return returnData;
 }
 
-
-
+function generateReqID(hmac, otp) {
+    const CRS = "APEXNotesLink";
+    generateRequestID(otp, CRS, hmac, sendKeyHMAC);
+}
+function generateRequestID(key, data, other_hmac, callback) {
+    // encoder to convert string to Uint8Array
+    var enc = new TextEncoder("utf-8");
+    console.log(key);
+    console.log(data);
+    window.crypto.subtle.importKey(
+        "raw", // raw format of the key - should be Uint8Array
+        enc.encode(key),
+        { // algorithm details
+            name: "HMAC",
+            hash: { name: "SHA-512" }
+        },
+        false, // export = false
+        ["sign", "verify"] // what this key can do
+    ).then(key => {
+        window.crypto.subtle.sign(
+            "HMAC",
+            key,
+            enc.encode(data)
+        ).then(signature => {
+            var b = new Uint8Array(signature);
+            var str = Array.prototype.map.call(b, x => x.toString(16).padStart(2, '0')).join("")
+            console.log(str);
+            callback(other_hmac, str);
+        });
+    });
+}
 function retrieve(data) {
     document.getElementById("retrieveBlock").classList.remove("hidden-elem");
     var reWrappedResourceKey = null;
@@ -405,14 +434,16 @@ function constructKeySignature(otp) {
     encoutput["kty"] = encodedEncPublicKey["kty"];
     encoutput["n"] = encodedEncPublicKey["n"];
     const jsonEncStr = JSON.stringify(encoutput, Object.keys(encoutput).sort());
-    generateHMAC(otp, jsonStr + jsonEncStr, sendKeyHMAC);
+    generateHMAC(otp, jsonStr + jsonEncStr, generateReqID);
 }
-function sendKeyHMAC(hmac) {
+function sendKeyHMAC(hmac, requestId) {
     const data = {};
     data["ownerEncPublicKey"] = keystore.getEncodedPublicKey("encryption");
     //data["ownerEncPublicKeySignature"] = keystore.getClientPublicKeySignature();
     data["publicKey"] = keystore.getEncodedPublicKey("signing");
     data["hmac"] = hmac;
+    data["requestId"] = requestId;
+    console.log(data);
     fetch(receivedData["pk_endpoint"], {
         method: "POST",
         mode: "cors",
@@ -502,15 +533,15 @@ function generateHMAC(key, data, callback) {
         },
         false, // export = false
         ["sign", "verify"] // what this key can do
-    ).then(key => {
+    ).then(key2 => {
         window.crypto.subtle.sign(
             "HMAC",
-            key,
+            key2,
             enc.encode(data)
         ).then(signature => {
             var b = new Uint8Array(signature);
             var str = Array.prototype.map.call(b, x => x.toString(16).padStart(2, '0')).join("")
-            callback(str);
+            callback(str,key);
         });
     });
 }

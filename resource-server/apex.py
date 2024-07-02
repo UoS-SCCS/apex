@@ -41,9 +41,9 @@ def validate_user(f):
         if (not isinstance(current_token,NoneType) and user_id == str(current_token.user_id)) or user_id == current_user.get_id():
             pass
         else:
-            #if user_id != current_user.get_id():
-            raise Exception("Permission Error")
-            #abort(404, message="You do not have permission to the resource you are trying to access")
+            if user_id != current_user.get_id():
+                raise Exception("Permission Error")
+                #abort(404, message="You do not have permission to the resource you are trying to access")
         return f(*args, **kwargs)
     return func
 
@@ -136,10 +136,9 @@ def promise_ca():
     #return jsonify(response) 
 
 
-
+#@authenticate_user()
+#@validate_user
 @apex.route('/promise-fulfilment', methods=('POST',))
-@authenticate_user()
-@validate_user
 def promise_fulfilment():
     #TODO ERROR HANDLING
    
