@@ -1,4 +1,4 @@
-_This repo is part of the_ **APEX research project**: _a framework for allowing selective sharing of a user's encrypted data with third-party applications.&nbsp;&nbsp;[→ Learn more](https://github.com/apex-authz/info)_
+_This repo is part of the_ **APEX research project**: _a framework to enable selective sharing of a user's encrypted data with third-party applications.&nbsp; [→&nbsp;Learn&nbsp;more](https://github.com/apex-authz/info)_
 <hr><br>
 
 # Cloud Drive Mobile (APEX Demo)
@@ -12,7 +12,7 @@ The app serves as a demonstration of the APEX protocols working in a cross-devic
 
 The app has been implemented as a web application running in a native wrapper using the [Capacitor](https://capacitorjs.com/) cross-platform development framework. However, it has only been tested to run on Android.
 
-_The files in this repo may be used under the terms of the_ **Apache License, Version 2.0**.&nbsp;&nbsp;[→ Read license text](https://github.com/apex-authz/cloud-drive-mobile/blob/main/LICENSE)
+_The files in this repo may be used under the terms of the_ **Apache License, Version 2.0**_.&nbsp; [→&nbsp;Read&nbsp;license&nbsp;text](https://github.com/apex-authz/cloud-drive-mobile/blob/main/LICENSE)_
 <br><br>
 
 ## How to Build and Run Cloud Drive Mobile
@@ -52,7 +52,7 @@ npm run build
 ```
 
 > [!IMPORTANT]
-> If you encounter a **"cannot find module"** error, follow the linked troubleshooting steps:&nbsp;&nbsp;[→ Resolve this error](#cannot-find-module)
+> If you encounter a **"cannot find module"** error, follow the linked troubleshooting steps:&nbsp; [_→&nbsp;Resolve&nbsp;this&nbsp;error_](#cannot-find-module)
 
 **B.** Next, you need to sync the built web application code to the Android Studio project:
 
@@ -70,8 +70,8 @@ If asked to **choose a target device**, select the device with Android 11.0 or g
 
 > [!IMPORTANT]
 > If you encounter either of these errors, follow the linked troubleshooting steps:
-> - **"unable to locate a Java Runtime"**:&nbsp;&nbsp;[→ Resolve this error](#unable-to-locate-a-java-runtime)<br>
-> - **"SDK location not found"**:&nbsp;&nbsp;[→ Resolve this error](#sdk-location-not-found)
+> - **"unable to locate a Java Runtime"**:&nbsp; [→&nbsp;Resolve&nbsp;this&nbsp;error](#unable-to-locate-a-java-runtime)<br>
+> - **"SDK location not found"**:&nbsp; [→&nbsp;Resolve&nbsp;this&nbsp;error](#sdk-location-not-found)
 
 ### Step 4: Configure Firebase Cloud Messaging (FCM)
 
