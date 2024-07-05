@@ -71,7 +71,7 @@ If asked to **choose a target device**, select the device with Android 11.0 or g
 > [!IMPORTANT]
 > If you encounter either of these errors, follow the linked troubleshooting steps:
 > - **"unable to locate a Java Runtime"**:&nbsp;&nbsp;[→ Resolve this error](#unable-to-locate-a-java-runtime)<br>
-> - **"SDK location not found"**:&nbsp;&nbsp;[→ Resolve this error](#unable-to-locate-a-java-runtime)
+> - **"SDK location not found"**:&nbsp;&nbsp;[→ Resolve this error](#sdk-location-not-found)
 
 ### Step 4: Configure Firebase Cloud Messaging (FCM)
 
