@@ -52,7 +52,7 @@ npm run build
 ```
 
 > [!IMPORTANT]
-> If you encounter a **"cannot find module"** error, follow the linked troubleshooting steps:&nbsp; [_→&nbsp;Resolve&nbsp;this&nbsp;error_](#cannot-find-module)
+> If you encounter a **"cannot find module"** error, follow the linked troubleshooting steps:&nbsp; [→&nbsp;Resolve&nbsp;this&nbsp;error](#cannot-find-module)
 
 **B.** Next, you need to sync the built web application code to the Android Studio project:
 
