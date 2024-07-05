@@ -12,7 +12,7 @@ The app serves as a demonstration of the APEX protocols working in a cross-devic
 
 The app has been implemented as a web application running in a native wrapper using the [Capacitor](https://capacitorjs.com/) cross-platform development framework. However, it has only been tested to run on Android.
 
-_The files in this repo may be used under the terms of the_ **Apache License, Version 2.0**.&nbsp;&nbsp;[→ Read license text](https://github.com/apex-authz/cloud-drive-mobile/blob/main/package.json)
+_The files in this repo may be used under the terms of the_ **Apache License, Version 2.0**.&nbsp;&nbsp;[→ Read license text](https://github.com/apex-authz/cloud-drive-mobile/blob/main/LICENSE)
 <br><br>
 
 ## How to Build and Run Cloud Drive Mobile
