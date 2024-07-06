@@ -1,0 +1,11 @@
+{
+  "appId": "com.castellate.dev.apex",
+  "appName": "Cloud Drive Agent",
+  "bundledWebRuntime": false,
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

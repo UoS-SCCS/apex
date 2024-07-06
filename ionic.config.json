@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "cloud-drive-agent",
   "integrations": {
     "capacitor": {}
   },
