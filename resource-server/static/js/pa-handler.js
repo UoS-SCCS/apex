@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 var openWindow = null;
 function loadProviderAgent() {
     var left = (screen.width / 2) - (500 / 2);
@@ -5,7 +7,7 @@ function loadProviderAgent() {
     document.getElementById("openPAButton").classList.add("hidden-elem");
     document.getElementById("progressIndicator").classList.remove("hidden-elem");
     const passData = document.getElementById("jsonData").value;
-    openWindow = window.open("https://resource.apex.dev.castellate.com:5002/provider-agent?jsonData=" + encodeURI(passData), "ProviderAgentWindow", "width=500px,height=500px, top=" + top + ", left=" + left);
+    openWindow = window.open(PROVIDER_AGENT_JSON + encodeURI(passData), "ProviderAgentWindow", "width=500px,height=500px, top=" + top + ", left=" + left);
 }
 window.addEventListener('message', function (e) {
     var message = e.data;
@@ -21,7 +23,6 @@ window.addEventListener('message', function (e) {
 });
 function triggerAuthorise(){
     if (!!window.EventSource) {
-        console.log("In trigger authorise");
         var source = new EventSource(document.location.href);
         source.onmessage = function(e) {
             const msg = JSON.parse(e.data);
@@ -48,14 +49,4 @@ window.onload = function () {
         triggerAuthorise();
     }
 };
-/**window.onload= function() {
 
-    var left = (screen.width/2)-(500/2);
-    var top = (screen.height/2)-(500/2);
-
-    const params = new URLSearchParams(window.location.search)
-    params.set("openpopup","True");
-    //window.location.search = params.toString();
-    //window.location.href
-    window.open(window.location.href + "?" + params.toString(),"ProviderAgentWindow","width=500px,height=500px, top="+top+", left="+left);
-  };*/

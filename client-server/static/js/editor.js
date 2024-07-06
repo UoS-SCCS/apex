@@ -1,4 +1,6 @@
 
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 var toolbarOptions = [
   ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
   ['blockquote', 'code-block'],
@@ -80,11 +82,11 @@ function saveData(data) {
     .then((response) => response.json())
     .then((data) => saveResponse(data));
 }
-function calculateTimings(){
+function calculateTimings() {
   const timing = {};
   timing["start"] = startSave;
-  timing["end"]=endSave;
-  timing["duration"]=endSave-startSave;
+  timing["end"] = endSave;
+  timing["duration"] = endSave - startSave;
   timing["item"] = currentNote;
   timing["isApex"] = currentNoteApex;
   save_timing_data.push(timing);
@@ -102,6 +104,7 @@ function loadFiles() {
     refreshNotesList();
   }
 }
+var lastNoteList = null;
 function refreshNotesList() {
 
   var url = "/notes/list";
@@ -110,6 +113,11 @@ function refreshNotesList() {
     .then((data) => updateList(data));
 }
 function updateList(data) {
+  //Crude check for the same list, should do a deep compare
+  if(lastNoteList != null && JSON.stringify(lastNoteList) == JSON.stringify(data)){
+    return;
+  }
+  lastNoteList = data;
   const menu = document.getElementById("slide-out");
   const existing = menu.getElementsByClassName("note-file");
   while (existing.length > 0) {
@@ -135,9 +143,9 @@ function updateList(data) {
       const text = document.createElement("span");
       icon.className = "fa-solid fa-lock file-icon";
       link.className = "note-file";
-      text.innerText=child.name.replace(".note.apex", "");
+      text.innerText = child.name.replace(".note.apex", "");
       link.appendChild(text);
-      
+
       link.appendChild(icon);
 
       link.dataset["name"] = child.name;
@@ -190,54 +198,54 @@ function getNote(name, APEX = false) {
 }
 var requestStart;
 var requestEnd;
-var timing_data= [];
+var timing_data = [];
 var startSave;
 var endSave;
-var save_timing_data= [];
-function exportSaveTiming(){
+var save_timing_data = [];
+function exportSaveTiming() {
   var durations = [];
   console.log(JSON.stringify(save_timing_data));
-  var total =0;
-  for(var i=1;i<save_timing_data.length;i++){
+  var total = 0;
+  for (var i = 1; i < save_timing_data.length; i++) {
     durations.push(save_timing_data[i]["duration"])
-    total=total + save_timing_data[i]["duration"];
+    total = total + save_timing_data[i]["duration"];
   }
   const result = getStandardDeviation(durations);
 
-  console.log("Average:" + (total/(save_timing_data.length-1)));
+  console.log("Average:" + (total / (save_timing_data.length - 1)));
   console.log("Mean:" + result[0]);
   console.log("Std:" + result[1]);
 
 }
 
-function exportTiming(){
+function exportTiming() {
   var durations = [];
   console.log(JSON.stringify(timing_data));
-  var total =0;
-  for(var i=1;i<timing_data.length;i++){
+  var total = 0;
+  for (var i = 1; i < timing_data.length; i++) {
     durations.push(timing_data[i]["duration"])
-    total=total + timing_data[i]["duration"];
+    total = total + timing_data[i]["duration"];
   }
   const result = getStandardDeviation(durations);
 
-  console.log("Average:" + (total/(timing_data.length-1)));
+  console.log("Average:" + (total / (timing_data.length - 1)));
   console.log("Mean:" + result[0]);
   console.log("Std:" + result[1]);
 
 }
 
-function getStandardDeviation (array) {
+function getStandardDeviation(array) {
   const n = array.length
   const mean = array.reduce((a, b) => a + b) / n
-  const std= Math.sqrt(array.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
-  return [mean,std];
+  const std = Math.sqrt(array.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n);
+  return [mean, std];
 }
 function updateEditor(data) {
   requestEnd = performance.now();
   const timing = {};
   timing["start"] = requestStart;
-  timing["end"]=requestEnd;
-  timing["duration"]=requestEnd-requestStart;
+  timing["end"] = requestEnd;
+  timing["duration"] = requestEnd - requestStart;
   timing["item"] = currentNote;
   timing["isApex"] = currentNoteApex;
   timing_data.push(timing);
@@ -292,9 +300,6 @@ function showOTP(resp) {
   instance.open();
 }
 function proceedWithLinking() {
-  //var left = (screen.width/2)-(500/2);
-  //var top = (screen.height/2)-(500/2);
-  //window.open("/link-authorise","AuthoriseWindow","width=500px,height=500px, top="+top+", left="+left);
   window.location = "/link-authorise";
 }
 document.addEventListener('DOMContentLoaded', function () {

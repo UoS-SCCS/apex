@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
@@ -19,7 +21,6 @@ def login():
 
 @auth.route('/login', methods=['POST'])
 def login_post():
-    # login code goes here
     email = request.form.get('email')
     password = request.form.get('password')
     remember = True if request.form.get('remember') else False

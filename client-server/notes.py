@@ -1,13 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required, current_user
-from . import db
 from flask import url_for, render_template, redirect
 from flask import Blueprint, render_template
 from flask_login import login_required, current_user
-from . import db
-from authlib.integrations.flask_client import OAuth
+
 from requests.exceptions import HTTPError
-from .models import OAuth2Token
 from .oauth_client import oauth
 from io import StringIO 
 import json

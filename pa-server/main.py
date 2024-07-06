@@ -1,6 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 from flask import Blueprint, render_template
-from flask_login import login_required, current_user
-
 
 main = Blueprint('main', __name__)
 

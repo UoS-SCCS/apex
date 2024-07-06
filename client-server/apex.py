@@ -1,32 +1,25 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, Response,jsonify
-from werkzeug.security import generate_password_hash, check_password_hash
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
+from flask import Blueprint,   request,  Response,jsonify
 from .models import User
-from flask_login import login_user, login_required, logout_user,current_user
+from flask_login import  login_required, current_user
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicNumbers,SECP256R1
-from authlib.integrations.flask_client import OAuth
-from requests.exceptions import HTTPError
+from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePublicNumbers
 from .oauth_client import oauth
-from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric import ec
 from .models import OTP, ClientAgentKey
-from cryptography.hazmat.primitives.asymmetric.utils import encode_dss_signature,decode_dss_signature
+from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
+from .config import CLIENT_HOST
 from . import db
 import json
 import hmac
-import base64
 from io import StringIO 
-import os
 from . import KEY_STORE
 apex = Blueprint('apex', __name__)
 
-
-#@login_required
 @apex.route('/pk_endpoint', methods=['POST'])
 def pk_endpoint():
     data = request.json
-    print("In public key endpoint")
-    print(data)
     if not "publicKey" in data or not "hmac" in data or not "requestId" in data:
         res = {}
         res["error"]=True
@@ -46,8 +39,6 @@ def pk_endpoint():
         encoded_otp = otp.get_otp().encode()
         encoded_public_key = get_jwk_representation(publicKey).encode()
         jwk_owner_enc_public_key = get_rsa_jwk_representation(json_owner_public_key).encode()
-        print("RSAEncryptedPublicKey")
-        print(jwk_owner_enc_public_key)
         hmac_obj = hmac.new(encoded_otp,encoded_public_key+jwk_owner_enc_public_key,"SHA512")
         
         if not hmac.compare_digest(data["hmac"],hmac_obj.hexdigest()):
@@ -67,23 +58,6 @@ def pk_endpoint():
             return Response(status=500, mimetype="application/json", response=json.dumps(res))
         user.owner_public_key = data["ownerEncPublicKey"]
 
-        #owner_public_key
-        #print(data)
-        ##Previous Signature Checking
-        #json_owner_public_key = json.loads(data["ownerEncPublicKey"]);
-        #signature_bytes = base64.urlsafe_b64decode(data["ownerEncPublicKeySignature"])
-        #jwk_owner_public_key = get_rsa_jwk_representation(json_owner_public_key)
-        #curve = None
-        #if publicKey["crv"]=="P-256":
-        #    curve =SECP256R1()
-        #ec_public_key = (EllipticCurvePublicNumbers( int.from_bytes(base64.urlsafe_b64decode(publicKey["x"]+"=="), "big"), int.from_bytes(base64.urlsafe_b64decode(publicKey["y"]+"=="), "big"),curve)).public_key()
-        #dss_sig = encode_dss_signature(int.from_bytes(signature_bytes[0:32], "big"),int.from_bytes(signature_bytes[32:], "big"))
-        #try:
-        #    ec_public_key.verify(dss_sig,jwk_owner_public_key.encode('utf-8'),ec.ECDSA(hashes.SHA256()))
-        #    current_user.owner_public_key = data["ownerEncPublicKey"]
-        #except InvalidSignature:
-        #    print("signature checking failed")
-        
         agent_key = ClientAgentKey(user_id=otp.get_user_id(),public_key=json.dumps(publicKey))
         db.session.add(agent_key)
         db.session.commit()
@@ -126,10 +100,10 @@ def save_apex():
     client_sig["s"] = hex(decoded_sig[1])
     output = {}
     output["userId"]=str(current_user.oauth_uid)
-    output["host"]="client.apex.dev.castellate.com"
+    output["host"]=CLIENT_HOST
     output["wrappedKey"]=wrapped_key
     output["encryptedData"]=encrypted_data
-    output["clientSignature"]=client_sig#base64.b64encode(signature).decode('utf-8')
+    output["clientSignature"]=client_sig
     output["promiseFulfilment"]=["direct"]
     updated_file = {"file": StringIO(json.dumps(output))}
     apex_data ={}
@@ -172,7 +146,7 @@ def wrap_key_apex():
     client_sig={}
     client_sig["r"] = hex(decoded_sig[0])
     client_sig["s"] = hex(decoded_sig[1])
-    json_data["host"]="client.apex.dev.castellate.com"
+    json_data["host"]=CLIENT_HOST
     json_data["clientSignature"]=client_sig
     json_data["promiseFulfilment"]=["direct"]
     headers = {'content-type': 'application/json'}

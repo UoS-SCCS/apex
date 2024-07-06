@@ -1,6 +1,5 @@
-
-const PA_URL = "https://resource.apex.dev.castellate.com:5002/provider-agent";
-const RESOURCE_SERVER = "https://resource.apex.dev.castellate.com:5001/";
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 window.addEventListener(
     "message",
     (event) => {
@@ -33,34 +32,18 @@ window.addEventListener(
 );
 function checkPromise(promise_id, callback) {
     if (!!window.EventSource) {
-        console.log("In trigger check");
         var source = new EventSource(RESOURCE_SERVER + "/promise-ca?promise_id=" + String(promise_id));
         source.onmessage = function (e) {
             const msg = JSON.parse(e.data);
             callback(promise_id,msg,source)
         }
     }
-    /**
-    console.log("Checking promise");
-    fetch(RESOURCE_SERVER + "/promise-ca?promise_id=" + String(promise_id), {
-        method: "GET",
-        cache: "no-cache",
-        headers: {
-            "Content-Type": "application/json",
-        }
-    })
-        .then((response) => response.json())
-        .then(data => callback(promise_id, data));*/
 }
 function checkPromiseCallback(promise_id, promise_data,source) {
     if (promise_data["status"] == "fulfilled") {
         source.close();
         processPromiseInDirect(promise_data);
-    } /**else {
-        window.setTimeout(function () {
-            checkPromise(promise_id, checkPromiseCallback);
-        }, 5000);
-    }*/
+    }
 }
 async function processPromise(params) {
 
@@ -161,24 +144,7 @@ async function decryptFile(promiseId, decryptedResourceKey) {
 }
 var keystore;
 function generateKeys() {
-    /**window.crypto.subtle.generateKey(
-        {
-            name: "RSA-OAEP",
-            modulusLength: 4096,
-            publicExponent: new Uint8Array([1, 0, 1]),
-            hash: "SHA-256",
-        },
-        true,
-        ["encrypt", "decrypt", "wrapKey", "unwrapKey"]
-    ).then(function (key) {
-        const publicKey = key.publicKey;
-        const privateKey = key.privateKey;
-        keystore.setEncPublicKey("encryption", publicKey);
-        keystore.setEncPrivateKey("encryption", privateKey);
-    }).catch(function (error) {
-        console.log("Error generating encryption key pair:" + error);
-    });*/
-
+    
 
 }
 
@@ -210,7 +176,6 @@ function removePromiseMappings(promiseId) {
 
 }
 function getSessionPromiseMapping(promiseId) {
-    //TODO Not currently thread safe
     var mapping = window.localStorage.getItem("mapping");
     if (mapping == null) {
         mapping = {};
@@ -233,7 +198,7 @@ async function getPromiseKeyMapping(promiseId) {
     ]);
 }
 function createPromiseKeyMapping(promiseId, key) {
-    //TODO Not currently thread safe
+    
     var mapping = window.localStorage.getItem("key_mapping");
     if (mapping == null) {
         mapping = {};
@@ -244,7 +209,7 @@ function createPromiseKeyMapping(promiseId, key) {
     window.localStorage.setItem("key_mapping", JSON.stringify(mapping));
 }
 function createSessionPromiseMapping(sessionId, promiseId) {
-    //TODO Not currently thread safe
+    
     var mapping = window.localStorage.getItem("mapping");
     if (mapping == null) {
         mapping = {};
@@ -263,13 +228,11 @@ async function getSessionFile(sessionId) {
 }
 async function getOwnerPublicKey() {
     if (window.localStorage.getItem("ownerPublicKey") == null) {
-        console.log("Retrieving Key From Server");
         const fetchResponse = await fetch("/notes/get_owner_public_key", {
             cache: "no-cache",
             credentials: "include"
         });
         const jsonOwnerPublicKey = await fetchResponse.json();
-        console.log(jsonOwnerPublicKey);
         window.localStorage.setItem("ownerPublicKey", JSON.stringify(jsonOwnerPublicKey));
 
         const publicEncKey = await window.crypto.subtle.importKey("jwk", jsonOwnerPublicKey,
@@ -279,9 +242,7 @@ async function getOwnerPublicKey() {
         );
         return publicEncKey;
     } else {
-        console.log("Key Stored Locally");
         const jsonOwnerPublicKey = JSON.parse(window.localStorage.getItem("ownerPublicKey"));
-        console.log(jsonOwnerPublicKey);
         const publicEncKey = await window.crypto.subtle.importKey("jwk", jsonOwnerPublicKey,
             RSA,
             true,
@@ -340,19 +301,14 @@ async function processRetrieve(data) {
             if (data["promise"] == "direct") {
                 promiseData["promise_id"] = data["promise_id"];
                 promiseData["action"] = "retrieve";
-                promiseData["redirect"] = window.location.protocol + "//" + window.location.host + "/clientAgent";//http://127.0.0.2:5000/clientAgent";
+                promiseData["redirect"] = window.location.protocol + "//" + window.location.host + "/clientAgent";
                 var url_data = {}
 
                 url_data["jsonData"] = JSON.stringify(promiseData);
 
-                window.location = PA_URL + "?" + new URLSearchParams(url_data); //http://127.0.0.3:5000/provider-agent?"
+                window.location = PA_URL + "?" + new URLSearchParams(url_data);
             } else {
                 checkPromise(data["promise_id"], checkPromiseCallback);
-                /**window.setTimeout(function () {
-                    
-                }, 5000);*/
-
-                //check promise status
             }
         });
 }
@@ -382,8 +338,7 @@ async function processRegister(data) {
     const output = {};
     output["encryptedData"] = encryptedData
     const publicEncKey = await getOwnerPublicKey();
-    console.log("PublicEncKey:" + JSON.stringify(publicEncKey));
-
+    
     let wrappedKey = await window.crypto.subtle.wrapKey("raw", key, publicEncKey, {
         name: "RSA-OAEP",
     })
@@ -409,16 +364,12 @@ async function processRegister(data) {
                 var promiseData = {};
                 promiseData["promise_id"] = data["promise_id"];
                 promiseData["action"] = "save";
-                promiseData["redirect"] = window.location.protocol + "//" + window.location.host + "/clientAgent";//"http://127.0.0.2:5000/clientAgent";
+                promiseData["redirect"] = window.location.protocol + "//" + window.location.host + "/clientAgent";
                 var url_data = {}
-
                 url_data["jsonData"] = JSON.stringify(promiseData);
-                window.location = PA_URL + "?" + new URLSearchParams(url_data);//"http://127.0.0.3:5000/provider-agent?"
+                window.location = PA_URL + "?" + new URLSearchParams(url_data);
             } else {
-                checkPromise(data["promise_id"], checkPromiseCallback);
-                /**window.setTimeout(function () {
-                    
-                }, 5000);*/
+                checkPromise(data["promise_id"], checkPromiseCallback);                
             }
         });
 }

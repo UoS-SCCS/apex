@@ -1,6 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 from flask import Blueprint, render_template
-from flask_login import login_required, current_user
-from . import db
 
 main = Blueprint('main', __name__)
 
@@ -11,7 +11,3 @@ def index():
 @main.route('/clientAgent')
 def client_agent():
     return render_template('clientAgent.html')
-#@main.route('/notes')
-#@login_required
-#def notes():
-#    return render_template('notes.html', name=current_user.name)

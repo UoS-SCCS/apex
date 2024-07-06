@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 const RSA = {
     name: "RSA-OAEP",
     hash: "SHA-256"
@@ -5,10 +7,6 @@ const RSA = {
 class KeyStore {
     constructor() {
         this._ks = {};
-        /**this.setPublicKey = this.setPublicKey.bind(this)
-        this.getPrivateKey = this.getPrivateKey.bind(this)
-        this.getPublicKey = this.getPublicKey.bind(this)
-        this.setPrivateKey = this.setPrivateKey.bind(this)*/
         this.store = this.store.bind(this);
         this.initialised = false;
         if (window.localStorage.getItem("keystore") != null) {

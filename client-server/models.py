@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 from flask_login import UserMixin
 from . import db
 import time
@@ -44,10 +46,6 @@ class OTP(db.Model):
         db.Integer
     )
     
-    #user_id = db.Column(
-    #    db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), unique=False
-    #)
-    #user = db.relationship('User')
     otp_time = db.Column(
         db.Integer, nullable=False,
         default=lambda: int(time.time())

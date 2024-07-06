@@ -1,7 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 import os
 import json
-from cryptography.hazmat.primitives import hashes
-
 from cryptography.hazmat.primitives.asymmetric import ec
 import josepy
 class KeyStore:

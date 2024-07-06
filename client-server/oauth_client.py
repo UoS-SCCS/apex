@@ -1,9 +1,12 @@
-from flask import url_for, render_template, redirect,jsonify
-from flask import Blueprint, render_template
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
+from flask import url_for, redirect,jsonify
+from flask import Blueprint
 from flask_login import login_required, current_user
 from . import db
 from authlib.integrations.flask_client import OAuth
 from .models import OAuth2Token, OTP
+from .config import RESOURCE_PROFILE_URL, RESOURCE_API_URL
 import secrets
 import time
 import hmac
@@ -65,7 +68,7 @@ def link_authorise():
 @login_required
 def authorize():
     token = oauth.mydrive.authorize_access_token()
-    profile_resp = oauth.mydrive.get('https://resource.apex.dev.castellate.com:5001/profile/')
+    profile_resp = oauth.mydrive.get(RESOURCE_PROFILE_URL)
     profile_resp.raise_for_status()
     profile = profile_resp.json()
     newtoken = OAuth2Token(user_id=current_user.get_id(),token_type=token["token_type"],access_token=token["access_token"],expires_at=token["expires_at"],refresh_token=token["refresh_token"],scope=token["scope"],oauth_uid=profile["user_id"])
@@ -73,15 +76,11 @@ def authorize():
     current_user.is_linked = True
     current_user.oauth_uid = profile["user_id"]
     db.session.commit()
-    
-    # do something with the token and profile
     return redirect('/notes')
 
 @oauth_client.route('/test')
 @login_required
 def test():
-    #token = oauth.mydrive.authorize_access_token()
-    resp = oauth.mydrive.get('https://resource.apex.dev.castellate.com:5001/api/v1/users/1/files/')
+    resp = oauth.mydrive.get(RESOURCE_API_URL)
     resp.raise_for_status()
-    # do something with the token and profile
     return redirect('/')

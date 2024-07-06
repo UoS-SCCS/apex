@@ -1,4 +1,5 @@
-const PROV_URL = "https://resource.apex.dev.castellate.com:5001/"
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 window.onload = function () {
     initProviderAgent();
     keystore = new KeyStore();
@@ -17,7 +18,6 @@ window.onload = function () {
             retrieve(jsonData);
         }
     }
-    //window.opener.postMessage("Testing", "*");
 
 }
 var receivedData = {};
@@ -29,16 +29,12 @@ function initProviderAgent() {
 
 async function processRewrapPromise(serverPromiseData, promise_id) {
 
-
-    
-
     var enc = new TextEncoder("utf-8");
 
     const wrappedAgentKey = serverPromiseData["wrappedAgentKey"];
     const wrappedAgentKeyBytes = base64ToBytes(wrappedAgentKey);
     const wrappedResourceKey = serverPromiseData["wrappedResourceKey"];
     const wrappedResourceKeyBytes = base64ToBytes(wrappedResourceKey);
-
 
     const clientSig = serverPromiseData["clientSignature"];
     var sigData = wrappedResourceKey + wrappedAgentKey;
@@ -54,7 +50,6 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
         console.log("signature verification failed");
         //return;
     }
-
     const privateKey = await keystore.getEncPrivateKey("encryption");
     const decryptedAgentKey = await window.crypto.subtle.decrypt(
         { name: "RSA-OAEP" },
@@ -71,10 +66,6 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
         privateKey,
         wrappedResourceKeyBytes
     );
-    /**const decryptedResourceAesKey = await window.crypto.subtle.importKey("raw", decryptedResourceKey, "AES-GCM", true, [
-        "encrypt",
-        "decrypt",
-    ]);*/
 
     const reEncIV = window.crypto.getRandomValues(new Uint8Array(12));
     let reEncryptedResourceKey = await window.crypto.subtle.encrypt(
@@ -89,11 +80,11 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     const output = {};
     output["reWrappedResourceKey"] = reEncryptedData
     output["promise_id"] = promise_id;
-    
+
     output["valid"] = true
     const returnData = {};
     returnData["reWrappedResourceKey"] = reEncryptedData
-    returnData["promise"] = await fetch(PROV_URL +"promise-fulfilment", {
+    returnData["promise"] = await fetch(PROV_URL + "promise-fulfilment", {
         method: "POST",
         mode: "cors",
         cache: "no-cache",
@@ -103,7 +94,7 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
         },
         body: JSON.stringify(output)
     });
-    
+
     return returnData;
 }
 
@@ -144,7 +135,7 @@ function retrieve(data) {
 
     var promiseData = {}
     promiseData["promise_id"] = data["promise_id"]
-    fetch(PROV_URL +"promise?" + new URLSearchParams(promiseData), {
+    fetch(PROV_URL + "promise?" + new URLSearchParams(promiseData), {
         method: "GET",
         mode: "cors",
         cache: "no-cache",
@@ -218,7 +209,7 @@ function save(data) {
             console.log("signature:" + verified);
             if (!verified) {
                 console.log("signature verification failed");
-                
+
             }
 
             const wrappedKey = serverPromiseData["promise_data"]["wrappedKey"];
@@ -301,7 +292,7 @@ function save(data) {
 
             //TODO this is result of signature check
             output["valid"] = true
-            return fetch(PROV_URL +"promise-fulfilment", {
+            return fetch(PROV_URL + "promise-fulfilment", {
                 method: "POST",
                 mode: "cors",
                 cache: "no-cache",
@@ -541,7 +532,7 @@ function generateHMAC(key, data, callback) {
         ).then(signature => {
             var b = new Uint8Array(signature);
             var str = Array.prototype.map.call(b, x => x.toString(16).padStart(2, '0')).join("")
-            callback(str,key);
+            callback(str, key);
         });
     });
 }

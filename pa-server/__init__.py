@@ -1,8 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0 
+# Copyright 2024 Dr Chris Culnane
 from flask import Flask
 
-
-
-import os
 def create_app():
     app = Flask(__name__)
 

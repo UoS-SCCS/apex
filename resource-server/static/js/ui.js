@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 const API_URL = "/api/v1/users/"
 
 window.addEventListener(
@@ -288,7 +290,6 @@ class FolderObject extends FileSystemObject {
         this.getFileSystem().closeIfNotAncestor(this);
         
         if(this.isOpen && this.children.length>0){
-            //this.closeFolder();
             this.renderFilesView(this.getFileSystem().getFilesRenderRoot());
         }else{
             if(this.getParent() != this.getFileSystem()){

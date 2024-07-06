@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0 
+// Copyright 2024 Dr Chris Culnane
 const API_URL = "/api/v1/users/"
 var fs=null;
 function getList() {
     const userId = document.getElementById("user_id").value
     var url = API_URL + userId + "/files/"
-
     fs = new FileSystem(url,document.getElementById("root-files"),document.getElementById("filesPanel"));
     fs.refresh();
 }
@@ -30,7 +31,6 @@ function createFolderUI(parentElement, folderName, folderPath) {
             const children = this.getElementsByClassName("collapsible");
             const iconElem = this.querySelector("a > span > span.icon > i");
             iconElem.classList.remove("fa-folder-open");
-            //iconElem.classList.add("fa-folder-plus");
             for(var i=0;i<children.length;i++){
                 
                 children[i].classList.remove("showing");
@@ -45,7 +45,6 @@ function createFolderUI(parentElement, folderName, folderPath) {
         }else{
             const iconElem = this.querySelector("a > span > span.icon > i");
             iconElem.classList.add("fa-folder-open");
-            //iconElem.classList.remove("fa-folder-plus");
             const children = this.childNodes;
             for(var i=0;i<children.length;i++){
                 if(children[i].classList.contains("collapsible")){
