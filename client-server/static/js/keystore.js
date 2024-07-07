@@ -5,12 +5,19 @@ const RSA = {
     hash: "SHA-256"
 }
 class KeyStore {
-    constructor() {
+    constructor(userId) {
         this._ks = {};
+        this._outerKs = {};
+        this.userId = userId;
         this.store = this.store.bind(this);
         this.initialised = false;
         if (window.localStorage.getItem("keystore") != null) {
-            this._ks = JSON.parse(window.localStorage.getItem("keystore"));
+            this._outerKs = JSON.parse(window.localStorage.getItem("keystore"));
+            if(this.userId in this._outerKs){
+                this._ks = this._outerKs[this.userId];
+            }else {
+                this._outerKs[this.userId] = this._ks;
+            }
             this.initialised = true;
         }
     }
@@ -98,6 +105,6 @@ class KeyStore {
             });
     }
     store() {
-        window.localStorage.setItem("keystore",JSON.stringify(this._ks));
+        window.localStorage.setItem("keystore",JSON.stringify(this._outerKs));
     }
 }

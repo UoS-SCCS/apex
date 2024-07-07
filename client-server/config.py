@@ -20,3 +20,4 @@ MYDRIVE_REFRESH_TOKEN_URL="https://resource.apex.dev.castellate.com:5001/oauth/t
 MYDRIVE_AUTHORIZE_URL="https://resource.apex.dev.castellate.com:5001/oauth/authorize?isAPEX=True"
 MYDRIVE_CLIENT_KWARGS={'scope': 'full'}
 MYDRIVE_API_BASE_URL="https://resource.apex.dev.castellate.com:5001/api/v1/users/"
+CRS = "APEXNotesLink"

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0 
 // Copyright 2024 Dr Chris Culnane
-window.onload = function () {
-    initProviderAgent();
-    keystore = new KeyStore();
+var userId = null;
+window.onload = async function () {
+    userId = await initProviderAgent();
+    keystore = new KeyStore(userId);
     if (!keystore.isInitialised()) {
         generateKeys();
     }
@@ -22,11 +23,25 @@ window.onload = function () {
 }
 var receivedData = {};
 var currentURLHost = null;
-function initProviderAgent() {
+async function initProviderAgent() {
+    
+    const response = await fetch(PROV_URL + "profile-id", {
+        method: "GET",
+        mode: "cors",
+        cache: "no-cache",
+        credentials: "include", // include, *same-origin, omit
+        headers: {
+            "Content-Type": "application/json",
+        }});
+    const data = await response.json();
+    console.log("UserId:" + data["userId"]);
+    return data["userId"];
 
 }
 
-
+function b642ab(base64_string){
+    return Uint8Array.from(window.atob(base64_string), c => c.charCodeAt(0));
+}
 async function processRewrapPromise(serverPromiseData, promise_id) {
 
     var enc = new TextEncoder("utf-8");
@@ -37,10 +52,12 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
     const wrappedResourceKeyBytes = base64ToBytes(wrappedResourceKey);
 
     const clientSig = serverPromiseData["clientSignature"];
+    const combined = b642ab(clientSig);
+                
     var sigData = wrappedResourceKey + wrappedAgentKey;
-    var r_elem = hexToBytes(clientSig["r"].substring(2));
-    var s_elem = hexToBytes(clientSig["s"].substring(2));
-    combined = r_elem.concat(s_elem);
+    //var r_elem = hexToBytes(clientSig["r"].substring(2));
+    //var s_elem = hexToBytes(clientSig["s"].substring(2));
+    //combined = r_elem.concat(s_elem);
     var clientPublicKey = keystore.getClientPublicKey(serverPromiseData["host"]);
     const encodedClientPublicKey = clientPublicKey;
     const publicClientKey = await window.crypto.subtle.importKey("jwk", encodedClientPublicKey, ECDSA, true, ["verify"]);
@@ -97,16 +114,14 @@ async function processRewrapPromise(serverPromiseData, promise_id) {
 
     return returnData;
 }
-
+const CRS = "APEXNotesLink";
 function generateReqID(hmac, otp) {
-    const CRS = "APEXNotesLink";
+    
     generateRequestID(otp, CRS, hmac, sendKeyHMAC);
 }
 function generateRequestID(key, data, other_hmac, callback) {
     // encoder to convert string to Uint8Array
     var enc = new TextEncoder("utf-8");
-    console.log(key);
-    console.log(data);
     window.crypto.subtle.importKey(
         "raw", // raw format of the key - should be Uint8Array
         enc.encode(key),
@@ -124,7 +139,6 @@ function generateRequestID(key, data, other_hmac, callback) {
         ).then(signature => {
             var b = new Uint8Array(signature);
             var str = Array.prototype.map.call(b, x => x.toString(16).padStart(2, '0')).join("")
-            console.log(str);
             callback(other_hmac, str);
         });
     });
@@ -192,16 +206,15 @@ function save(data) {
     }).then((response) => response.json())
         .then(async (serverPromiseData) => {
             var enc = new TextEncoder("utf-8");
-            //console.log(JSON.stringify(serverPromiseData));
             var id = serverPromiseData["target_file"];
             idx = id.indexOf("NoteTaker/") + "NoteTaker/".length;
             id = id.substring(idx);
-            //console.log(JSON.stringify(serverPromiseData));
             const clientSig = serverPromiseData["promise_data"]["clientSignature"]
+            const combined = b642ab(clientSig);
             var sigData = serverPromiseData["promise_data"]["userId"] + id + serverPromiseData["promise_data"]["wrappedKey"] + JSON.stringify(serverPromiseData["promise_data"]["encryptedData"], Object.keys(serverPromiseData["promise_data"]["encryptedData"]).sort());
-            var r_elem = hexToBytes(clientSig["r"].substring(2));
-            var s_elem = hexToBytes(clientSig["s"].substring(2));
-            combined = r_elem.concat(s_elem);
+            //var r_elem = hexToBytes(clientSig["r"].substring(2));
+            //var s_elem = hexToBytes(clientSig["s"].substring(2));
+            //combined = r_elem.concat(s_elem);
             var clientPublicKey = keystore.getClientPublicKey(serverPromiseData["promise_data"]["host"]);
             const encodedClientPublicKey = clientPublicKey;
             const publicClientKey = await window.crypto.subtle.importKey("jwk", encodedClientPublicKey, ECDSA, true, ["verify"]);
@@ -425,7 +438,7 @@ function constructKeySignature(otp) {
     encoutput["kty"] = encodedEncPublicKey["kty"];
     encoutput["n"] = encodedEncPublicKey["n"];
     const jsonEncStr = JSON.stringify(encoutput, Object.keys(encoutput).sort());
-    generateHMAC(otp, jsonStr + jsonEncStr, generateReqID);
+    generateHMAC(otp, CRS+ jsonStr + jsonEncStr, generateReqID);
 }
 function sendKeyHMAC(hmac, requestId) {
     const data = {};
@@ -434,7 +447,6 @@ function sendKeyHMAC(hmac, requestId) {
     data["publicKey"] = keystore.getEncodedPublicKey("signing");
     data["hmac"] = hmac;
     data["requestId"] = requestId;
-    console.log(data);
     fetch(receivedData["pk_endpoint"], {
         method: "POST",
         mode: "cors",
@@ -563,7 +575,7 @@ function verifyHMAC(key, signature, data, callback) {
             "HMAC",
             key,
             sigBytes,
-            enc.encode(data)
+            enc.encode(CRS + data)
         ).then(result => {
             callback(result);
 

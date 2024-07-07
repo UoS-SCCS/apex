@@ -110,7 +110,10 @@ function refreshNotesList() {
   var url = "/notes/list";
   fetch(url)
     .then((response) => response.json())
-    .then((data) => updateList(data));
+    .then((data) => updateList(data))
+    .catch( err => {
+      console.log("Cannot load notes list - may not be linked");
+    });
 }
 function updateList(data) {
   //Crude check for the same list, should do a deep compare
@@ -249,7 +252,6 @@ function updateEditor(data) {
   timing["item"] = currentNote;
   timing["isApex"] = currentNoteApex;
   timing_data.push(timing);
-  console.log("In update editor:" + data);
   if (JSON.stringify(data) == "{}") {
     document.getElementsByClassName("ql-editor")[0].dataset.placeholder = "Empty note, click here to start editing";
   }

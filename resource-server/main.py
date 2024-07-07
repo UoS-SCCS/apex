@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 
 # Copyright 2024 Dr Chris Culnane
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template,jsonify
 from flask_login import login_required, current_user
 from . import db
 
@@ -16,6 +16,13 @@ def index():
 @login_required
 def profile():
     return render_template("profile.html", name=current_user.name)
+
+@main.route("/profile-id")
+@login_required
+def profile_id():
+    data = {}
+    data["userId"] = current_user.id
+    return jsonify(data)
 
 
 @main.route("/storage")

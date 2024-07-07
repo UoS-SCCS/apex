@@ -5,13 +5,21 @@ const RSA = {
     hash: "SHA-256"
 }
 class KeyStore {
-    constructor() {
+    constructor(userId) {
         this._ks = {};
+        this._outerKs = {};
+        this.userId = userId;
         this.store = this.store.bind(this);
         this.initialised = false;
         if (window.localStorage.getItem("keystore") != null) {
-            this._ks = JSON.parse(window.localStorage.getItem("keystore"));
-            this.initialised = true;
+            this._outerKs = JSON.parse(window.localStorage.getItem("keystore"));
+            if(this.userId in this._outerKs){
+                this._ks = this._outerKs[this.userId];
+                this.initialised = true;
+            }else {
+                this._outerKs[this.userId] = this._ks;
+            }
+            
         }
     }
     isInitialised(){
@@ -105,6 +113,6 @@ class KeyStore {
         return this._ks["publicKeySignature"];
     }
     store() {
-        window.localStorage.setItem("keystore",JSON.stringify(this._ks));
+        window.localStorage.setItem("keystore",JSON.stringify(this._outerKs));
     }
 }

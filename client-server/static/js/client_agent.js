@@ -7,14 +7,11 @@ window.addEventListener(
     },
     false
 );
+
 window.addEventListener(
     "load",
     (event) => {
-
-        keystore = new KeyStore();
-        if (!keystore.isInitialised()) {
-            generateKeys();
-        }
+        
         let params = (new URL(document.location)).searchParams;
 
         let action = params.get("action");
@@ -142,11 +139,6 @@ async function decryptFile(promiseId, decryptedResourceKey) {
     }
     return null;
 }
-var keystore;
-function generateKeys() {
-    
-
-}
 
 function startRegister() {
     const msg = {};
@@ -227,22 +219,29 @@ async function getSessionFile(sessionId) {
 
 }
 async function getOwnerPublicKey() {
-    if (window.localStorage.getItem("ownerPublicKey") == null) {
+    const userId = document.getElementById("userId").value;
+    var ownerPublicKeys = window.localStorage.getItem("ownerPublicKeys");
+    if(ownerPublicKeys == null){
+        ownerPublicKeys = {};
+    }else {
+        ownerPublicKeys = JSON.parse(ownerPublicKeys);
+    }
+    if(!(userId in ownerPublicKeys)){
         const fetchResponse = await fetch("/notes/get_owner_public_key", {
             cache: "no-cache",
             credentials: "include"
         });
         const jsonOwnerPublicKey = await fetchResponse.json();
-        window.localStorage.setItem("ownerPublicKey", JSON.stringify(jsonOwnerPublicKey));
-
+        ownerPublicKeys[userId]= JSON.stringify(jsonOwnerPublicKey);
+        window.localStorage.setItem("ownerPublicKeys", JSON.stringify(ownerPublicKeys));
         const publicEncKey = await window.crypto.subtle.importKey("jwk", jsonOwnerPublicKey,
             RSA,
             true,
             ["encrypt", "wrapKey"]
         );
         return publicEncKey;
-    } else {
-        const jsonOwnerPublicKey = JSON.parse(window.localStorage.getItem("ownerPublicKey"));
+    }else{
+        const jsonOwnerPublicKey = JSON.parse(ownerPublicKeys[userId]);
         const publicEncKey = await window.crypto.subtle.importKey("jwk", jsonOwnerPublicKey,
             RSA,
             true,
@@ -272,7 +271,6 @@ async function processRetrieve(data) {
 
     const publicEncKey = await getOwnerPublicKey();
 
-    //const privateKey = await keystore.getEncPublicKey("encryption");
     let wrappedKey = await window.crypto.subtle.wrapKey("raw", key, publicEncKey, {
         name: "RSA-OAEP",
     });
@@ -359,7 +357,6 @@ async function processRegister(data) {
     })
         .then((response) => response.json())
         .then((data) => {
-            console.log(data);
             if (data["promise"] == "direct") {
                 var promiseData = {};
                 promiseData["promise_id"] = data["promise_id"];

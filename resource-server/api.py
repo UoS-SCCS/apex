@@ -420,7 +420,7 @@ class Wrapping(Resource):
             parser = reqparse.RequestParser()
             parser.add_argument("wrappedAgentKey", type=str, location="json")
             parser.add_argument("wrappedKey", type=str, location="json")
-            parser.add_argument("clientSignature", type=dict, location="json")
+            parser.add_argument("clientSignature", type=str, location="json")
             parser.add_argument("host", type=str, location="json")
 
             args = parser.parse_args()

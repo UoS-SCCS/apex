@@ -9,11 +9,12 @@ from .oauth_client import oauth
 from cryptography.hazmat.primitives.asymmetric import ec
 from .models import OTP, ClientAgentKey
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
-from .config import CLIENT_HOST
+from .config import CLIENT_HOST, CRS
 from . import db
 import json
 import hmac
 from io import StringIO 
+import base64
 from . import KEY_STORE
 apex = Blueprint('apex', __name__)
 
@@ -39,7 +40,7 @@ def pk_endpoint():
         encoded_otp = otp.get_otp().encode()
         encoded_public_key = get_jwk_representation(publicKey).encode()
         jwk_owner_enc_public_key = get_rsa_jwk_representation(json_owner_public_key).encode()
-        hmac_obj = hmac.new(encoded_otp,encoded_public_key+jwk_owner_enc_public_key,"SHA512")
+        hmac_obj = hmac.new(encoded_otp,CRS.encode() + encoded_public_key+jwk_owner_enc_public_key,"SHA512")
         
         if not hmac.compare_digest(data["hmac"],hmac_obj.hexdigest()):
             res = {}
@@ -63,7 +64,7 @@ def pk_endpoint():
         db.session.commit()
         json_pub_key = KEY_STORE.get_public_key_json("signing")
         jwk_json_pub_key = get_jwk_representation(json_pub_key).encode()
-        my_hmac =hmac.new(encoded_otp,jwk_json_pub_key,"SHA512")
+        my_hmac =hmac.new(encoded_otp,CRS.encode() + jwk_json_pub_key,"SHA512")
         hmac_encoded = my_hmac.hexdigest()
         resp = {}
         resp["success"]=True
@@ -95,15 +96,17 @@ def save_apex():
     signature_data = str(current_user.oauth_uid) + data["name"] + wrapped_key + json.dumps(encrypted_data, sort_keys=True,indent=None, separators= (',', ':'))
     signature = private_key.sign(signature_data.encode('utf-8'), ec.ECDSA(hashes.SHA256()))
     decoded_sig = decode_dss_signature(signature)
-    client_sig={}
-    client_sig["r"] = hex(decoded_sig[0])
-    client_sig["s"] = hex(decoded_sig[1])
+    #client_sig={}
+    #client_sig["r"] = base64.b64encode(decoded_sig[0].to_bytes(32, byteorder='big')).decode('utf-8')#decoded_sig[0].to_bytes(32, byteorder='big').hex() #hex(decoded_sig[0])
+    #client_sig["s"] = base64.b64encode(decoded_sig[1].to_bytes(32, byteorder='big')).decode('utf-8')#.hex() #hex(decoded_sig[1])
+    signatureP1363 = base64.b64encode(decoded_sig[0].to_bytes(32, byteorder='big') + decoded_sig[1].to_bytes(32, byteorder='big')).decode('utf-8')
+
     output = {}
     output["userId"]=str(current_user.oauth_uid)
     output["host"]=CLIENT_HOST
     output["wrappedKey"]=wrapped_key
     output["encryptedData"]=encrypted_data
-    output["clientSignature"]=client_sig
+    output["clientSignature"]=signatureP1363
     output["promiseFulfilment"]=["direct"]
     updated_file = {"file": StringIO(json.dumps(output))}
     apex_data ={}
@@ -143,11 +146,13 @@ def wrap_key_apex():
     signature_data = wrapped_key + wrapped_agent_key
     signature = private_key.sign(signature_data.encode('utf-8'), ec.ECDSA(hashes.SHA256()))
     decoded_sig = decode_dss_signature(signature)
-    client_sig={}
-    client_sig["r"] = hex(decoded_sig[0])
-    client_sig["s"] = hex(decoded_sig[1])
+    #client_sig={}
+    #client_sig["r"] = hex(decoded_sig[0])
+    #client_sig["s"] = hex(decoded_sig[1])
+    signatureP1363 = base64.b64encode(decoded_sig[0].to_bytes(32, byteorder='big') + decoded_sig[1].to_bytes(32, byteorder='big')).decode('utf-8')
+
     json_data["host"]=CLIENT_HOST
-    json_data["clientSignature"]=client_sig
+    json_data["clientSignature"]=signatureP1363
     json_data["promiseFulfilment"]=["direct"]
     headers = {'content-type': 'application/json'}
     resp = oauth.mydrive.post(str(current_user.oauth_uid) + '/wrapping/NoteTaker/' + json_data["name"],data=json.dumps(json_data), headers=headers)    
