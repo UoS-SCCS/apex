@@ -17,6 +17,7 @@ const ECDSA = {
     },
 }
 const PROVIDER_CERT_ENDPOINT = PROV_URL + "client_cert_endpoint";
+const CRS = "APEXNotesLink";
 function hexToBytes(hex) {
     let bytes = [];
     for (let c = 0; c < hex.length; c += 2)
@@ -31,6 +32,10 @@ function _arrayBufferToBase64(buffer) {
         binary += String.fromCharCode(bytes[i]);
     }
     return window.btoa(binary);
+}
+
+function b642ab(base64_string){
+    return Uint8Array.from(window.atob(base64_string), c => c.charCodeAt(0));
 }
 export class ProviderAgent {
 
@@ -51,12 +56,9 @@ export class ProviderAgent {
     }
     initProviderAgent() {
         this.keystore.initKeystore().then(function () {
-            console.log("checking for keys");
             if (!keyStore.isInitialised()) {
                 this.generateKeys();
-                console.log("Generating keys");
             }
-            console.log("finished init");
         }.bind(this));
     }
 
@@ -85,17 +87,15 @@ export class ProviderAgent {
 
         const clientSig = serverPromiseData["clientSignature"];
         var sigData = wrappedResourceKey + wrappedAgentKey;
-        var r_elem = hexToBytes(clientSig["r"].substring(2));
-        var s_elem = hexToBytes(clientSig["s"].substring(2));
-        var combined = r_elem.concat(s_elem);
+        const combined = b642ab(clientSig);
+                
         var clientPublicKey = keyStore.getClientPublicKey(serverPromiseData["host"]);
         const encodedClientPublicKey = clientPublicKey;
         const publicClientKey = await window.crypto.subtle.importKey("jwk", encodedClientPublicKey, ECDSA, true, ["verify"]);
         let verified = await window.crypto.subtle.verify(ECDSA, publicClientKey, Int8Array.from(combined), enc.encode(sigData));
-        console.log("signature:" + verified);
         if (!verified) {
             console.log("signature verification failed");
-            //return;
+            return;
         }
 
         const privateKey = await keyStore.getEncPrivateKey("encryption");
@@ -217,56 +217,38 @@ export class ProviderAgent {
             }
         }).then((response) => response.json())
             .then(async (serverPromiseData) => {
-                console.log(JSON.stringify(serverPromiseData));
                 var enc = new TextEncoder("utf-8");
-                //console.log(JSON.stringify(serverPromiseData));
                 var id = serverPromiseData["target_file"];
-                console.log(id);
                 var idx = id.indexOf("NoteTaker/") + "NoteTaker/".length;
-                console.log(idx);
                 id = id.substring(idx);
-                console.log(id);
-                //console.log(JSON.stringify(serverPromiseData));
                 const clientSig = serverPromiseData["promise_data"]["clientSignature"]
                 var sigData = serverPromiseData["promise_data"]["userId"] + id + serverPromiseData["promise_data"]["wrappedKey"] + JSON.stringify(serverPromiseData["promise_data"]["encryptedData"], Object.keys(serverPromiseData["promise_data"]["encryptedData"]).sort());
-                var r_elem = hexToBytes(clientSig["r"].substring(2));
-                var s_elem = hexToBytes(clientSig["s"].substring(2));
-                var combined = r_elem.concat(s_elem);
+                const combined = b642ab(clientSig);
                 var clientPublicKey = keyStore.getClientPublicKey(serverPromiseData["promise_data"]["host"]);
-                console.log("ClientPublicKey:" + JSON.stringify(clientPublicKey));
-                console.log("Combined:" + clientSig["r"].substring(2) + clientSig["s"].substring(2));
-
-
+                
                 const encodedClientPublicKey = clientPublicKey;
                 const publicClientKey = await window.crypto.subtle.importKey("jwk", encodedClientPublicKey, ECDSA, true, ["verify"]);
                 let verified = await window.crypto.subtle.verify(ECDSA, publicClientKey, Int8Array.from(combined), enc.encode(sigData));
-                console.log("signature:" + verified);
                 if (!verified) {
                     console.log("signature verification failed");
-
+                    return;
                 }
 
                 const wrappedKey = serverPromiseData["promise_data"]["wrappedKey"];
                 const wrappedKeyBytes = base64ToBytes(wrappedKey);
-                console.log("1");
-                console.log(wrappedKey);
                 const privateKey = await keyStore.getEncPrivateKey("encryption");
-                console.log("PrivateKey:" + JSON.stringify(privateKey));
                 const tempEncPubKey = await keyStore.getEncPublicKey("encryption");
-                console.log("PublicKey:" + JSON.stringify(tempEncPubKey));
                 const decryptedKey = await window.crypto.subtle.decrypt(
                     { name: "RSA-OAEP" },
                     privateKey,
                     wrappedKeyBytes
                 );
-                console.log("2");
                 const iv = base64ToBytes(serverPromiseData["promise_data"]["encryptedData"]["iv"]);
                 const cipher = base64ToBytes(serverPromiseData["promise_data"]["encryptedData"]["cipher"]);
                 const aesKey = await window.crypto.subtle.importKey("raw", decryptedKey, "AES-GCM", true, [
                     "encrypt",
                     "decrypt",
                 ]);
-                console.log("3");
                 let decryptedMessage = await window.crypto.subtle.decrypt(
                     { name: "AES-GCM", iv: iv },
                     aesKey,
@@ -354,7 +336,6 @@ export class ProviderAgent {
                 return response.text();
             })
             .then((serverData) => {
-                console.log(serverData)
                 if (serverData["status"] == "fulfilled") {
 
                     /**const promiseId = data["promise_id"];
@@ -468,10 +449,10 @@ export class ProviderAgent {
         encoutput["kty"] = encodedEncPublicKey["kty"];
         encoutput["n"] = encodedEncPublicKey["n"];
         const jsonEncStr = JSON.stringify(encoutput, Object.keys(encoutput).sort());
-        this.generateHMAC(otp, jsonStr + jsonEncStr, this.generateReqID.bind(this));
+        this.generateHMAC(otp, CRS + jsonStr + jsonEncStr, this.generateReqID.bind(this));
     }
     generateReqID(hmac, otp) {
-        const CRS = "APEXNotesLink"
+        
         this.generateRequestID(otp, CRS, hmac, this.sendKeyHMAC.bind(this));
     }
     sendKeyHMAC(hmac, requestId) {
@@ -482,8 +463,6 @@ export class ProviderAgent {
         data["publicKey"] = this.keystore.getEncodedPublicKey("signing");
         data["hmac"] = hmac;
         data["requestId"] = requestId;
-        console.log("Data to send");
-        console.log(JSON.stringify(data));
         fetch(this.receivedData["pk_endpoint"], {
             method: "POST",
             mode: "cors",
@@ -495,12 +474,7 @@ export class ProviderAgent {
             body: JSON.stringify(data),
         }).then((response) => response.json())
             .then(function (data) {
-                console.log("Response from sending key")
-                console.log(JSON.stringify(data));
                 this.receivedKey = data["publicKey"];
-                console.log(this.receivedKey);
-                console.log(this.receivedKey.crv);
-                console.log(this.receivedKey["crv"]);
                 const hmac = data["hmac"];
                 const output = {};
                 output["crv"] = this.receivedKey.crv;
@@ -551,9 +525,7 @@ export class ProviderAgent {
         myHeaders["method"] = "POST";
         myHeaders["headers"]["Content-Type"] = "application/json";
         myHeaders["body"] = JSON.stringify(data);
-        console.log(JSON.stringify(myHeaders));
         const targetURL = API_URL + auth.userId + "/provider-agent-setup/";
-        console.log(targetURL);
         /**fetch(targetURL, {
             method: "POST",
             mode: "cors",
@@ -564,7 +536,6 @@ export class ProviderAgent {
         fetch(targetURL, myHeaders).then((response) => response.json())
 
             .then(function (data) {
-                console.log(JSON.stringify(data));
                 if (data["success"]) {
                     var innerdata = {};
                     innerdata["uid"] = this.uid;
@@ -573,8 +544,6 @@ export class ProviderAgent {
                     innerHeaders["headers"]["Content-Type"] = "application/json";
                     innerHeaders["body"]=JSON.stringify(innerdata);
                     const innerTargetURL = API_URL + auth.userId + "/provider-agent-setup/";
-                    console.log(JSON.stringify(innerHeaders));
-                    console.log(innerTargetURL)
                     fetch(innerTargetURL, innerHeaders).then((response) => response.json()).then(data => {
                         if(data["success"]){
                             window.showStatus();
@@ -615,8 +584,6 @@ export class ProviderAgent {
     generateRequestID(key, data, other_hmac, callback) {
         // encoder to convert string to Uint8Array
         var enc = new TextEncoder("utf-8");
-        console.log(key);
-        console.log(data);
         window.crypto.subtle.importKey(
             "raw", // raw format of the key - should be Uint8Array
             enc.encode(key),
@@ -634,7 +601,6 @@ export class ProviderAgent {
             ).then(signature => {
                 var b = new Uint8Array(signature);
                 var str = Array.prototype.map.call(b, x => x.toString(16).padStart(2, '0')).join("")
-                console.log(str);
                 callback(other_hmac, str);
             });
         });
@@ -660,7 +626,7 @@ export class ProviderAgent {
                 "HMAC",
                 key,
                 sigBytes,
-                enc.encode(data)
+                enc.encode(CRS + data)
             ).then(result => {
                 callback(result);
 

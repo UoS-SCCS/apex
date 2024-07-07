@@ -39,25 +39,49 @@ class Storage {
   static REFRESH_TOKEN = "refresh_token";
   static USER_ID = "user_id";
 
-  static async getKeys(){
+  static CURRENT_UID = "current_uid";
+  static DATA = "data";
+
+  static async clear() {
+    return (await SecureStoragePlugin.clear());
+  }
+
+  static async getKeys() {
     return (await SecureStoragePlugin.keys())["value"];
   }
-  static async getAccessToken() {
+  static async getAccessToken(uid) {
     try {
-      if ((await this.getKeys()).includes(Storage.ACCESS_TOKEN)) {
+      if ((await this.getKeys()).includes(Storage.DATA)) {
+        var data = JSON.parse((await SecureStoragePlugin.get({ "key": Storage.DATA }))["value"]);
+        if (uid in data && Storage.ACCESS_TOKEN in data[uid]) {
+          return data[uid][Storage.ACCESS_TOKEN];
+        }
+        console.log('Item with specified key does not exist.');
+        return null;
+        /**if(Storage.ACCESS_TOKEN in data){
+          return data[]
+        }
         //This shouldn't be require, but for some reason an object is being returned not the value
-        return (await SecureStoragePlugin.get({ "key": Storage.ACCESS_TOKEN }))["value"];
+        return (await SecureStoragePlugin.get({ "key": Storage.ACCESS_TOKEN }))["value"];*/
       }
     } catch (error) {
       console.log('Item with specified key does not exist.');
       return null;
     }
   }
-  static async getRefreshToken() {
+  static async getRefreshToken(uid) {
     try {
-      if ((await this.getKeys()).includes(Storage.REFRESH_TOKEN)) {
-        return (await SecureStoragePlugin.get({ "key": Storage.REFRESH_TOKEN }))["value"];
+      if ((await this.getKeys()).includes(Storage.DATA)) {
+        var data = JSON.parse((await SecureStoragePlugin.get({ "key": Storage.DATA }))["value"]);
+        if (uid in data && Storage.REFRESH_TOKEN in data[uid]) {
+          return data[uid][Storage.REFRESH_TOKEN];
+        }
+        console.log('Item with specified key does not exist.');
+        return null;
       }
+      /**if ((await this.getKeys()).includes(Storage.REFRESH_TOKEN)) {
+        return (await SecureStoragePlugin.get({ "key": Storage.REFRESH_TOKEN }))["value"];
+      }*/
     } catch (error) {
       console.log('Item with specified key does not exist.');
       return null;
@@ -65,28 +89,57 @@ class Storage {
   }
   static async getUserId() {
     try {
-      console.log("Keys:" + JSON.stringify(await this.getKeys()));
-      if ((await this.getKeys()).includes(Storage.USER_ID)) {
-        return Number((await SecureStoragePlugin.get({ "key": Storage.USER_ID }))["value"]);
+
+      if ((await this.getKeys()).includes(Storage.CURRENT_UID)) {
+        return Number((await SecureStoragePlugin.get({ "key": Storage.CURRENT_UID }))["value"]);
+      } else {
+        return null;
       }
     } catch (error) {
       console.log('Item with specified key does not exist.');
       return null;
     }
   }
-  static async setAccessToken(token) {
-    await SecureStoragePlugin.set({ "key": Storage.ACCESS_TOKEN, "value": token });
-    console.log("Stored Access Token");
+  static async setAccessToken(uid, token) {
+    var data = {};
+    if ((await this.getKeys()).includes(Storage.DATA)) {
+      data = JSON.parse((await SecureStoragePlugin.get({ "key": Storage.DATA }))["value"]);
+    }
+    if (!(uid in data)) {
+      data[uid]={};
+    }
+    data[uid][Storage.ACCESS_TOKEN] = token;
+    await SecureStoragePlugin.set({ "key": Storage.DATA, "value": JSON.stringify(data) });
   }
-  static async setRefreshToken(token) {
-    await SecureStoragePlugin.set({ "key": Storage.REFRESH_TOKEN, "value": token });
-    console.log("Stored Refresh Token");
+  static async setRefreshToken(uid, token) {
+    var data = {};
+    if ((await this.getKeys()).includes(Storage.DATA)) {
+      data = JSON.parse((await SecureStoragePlugin.get({ "key": Storage.DATA }))["value"]);
+    }
+    if (!(uid in data)) {
+      data[uid]={};
+    }
+    data[uid][Storage.REFRESH_TOKEN] = token;
+    await SecureStoragePlugin.set({ "key": Storage.DATA, "value": JSON.stringify(data) });
   }
   static async setUserId(token) {
-    await SecureStoragePlugin.set({ "key": Storage.USER_ID, "value": token });
-    console.log("Stored User ID");
+    await SecureStoragePlugin.set({ "key": Storage.CURRENT_UID, "value": token });
   }
-  static async removeAllTokens() {
+  static async logoutUser(uid) {
+    if ((await this.getKeys()).includes(Storage.CURRENT_UID)) {
+      await SecureStoragePlugin.remove({ "key": Storage.CURRENT_UID });
+    }
+  }
+  static async removeAllTokens(uid) {
+    var data = {};
+    if ((await this.getKeys()).includes(Storage.DATA)) {
+      data = JSON.parse((await SecureStoragePlugin.get({ "key": Storage.DATA }))["value"]);
+    }
+    if (uid in data) {
+      delete data[uid];
+    }
+    await SecureStoragePlugin.set({ "key": Storage.DATA, "value": JSON.stringify(data) });
+    /**
     if ((await this.getKeys()).includes(Storage.ACCESS_TOKEN)) {
       await SecureStoragePlugin.remove({ "key": Storage.ACCESS_TOKEN });
     }
@@ -95,7 +148,7 @@ class Storage {
     }
     if ((await this.getKeys()).includes(Storage.USER_ID)) {
       await SecureStoragePlugin.remove({ "key": Storage.USER_ID });
-    }
+    }*/
     /**await SecureStoragePlugin.get({ "key": Storage.ACCESS_TOKEN })
       .then(value => {
         
@@ -126,15 +179,17 @@ export class AuthComponent {
   hasCredentials = false;
   loggedIn = false;
   fcmTokenToSave = null;
+  currentFcmToken = null;
   constructor() {
     this.loggedIn = false;
   }
   async init() {
-    this.accessToken = await Storage.getAccessToken();
-    this.refreshToken = await Storage.getRefreshToken();
     this.userId = await Storage.getUserId();
-
-    console.log("userId:" + this.userId);
+    if (this.userId != null) {
+      this.accessToken = await Storage.getAccessToken(this.userId);
+      this.refreshToken = await Storage.getRefreshToken(this.userId);
+    }
+    console.log(this.accessToken);
     if (this.accessToken != null && this.userId != null) {
       this.hasCredentials = true;
       this.checkLoggedIn();
@@ -153,7 +208,6 @@ export class AuthComponent {
   async _registerFCM() {
     console.log("Updating FCM")
     const url = API_URL + this.userId + "/provider-agent/"
-    console.log("In checked logged in:" + url);
     var headers = this._getHeaders();
     headers["method"] = "PUT";
     headers["headers"]["Content-Type"] = "application/json";
@@ -176,28 +230,30 @@ export class AuthComponent {
   }
   async checkLoggedIn() {
 
-
-    //"/users/<user_id>/provider-agent/"
-    const url = API_URL + this.userId + "/provider-agent/"
-    console.log("In checked logged in:" + url);
-    fetch(url, this._getHeaders()).then(function (response) {
-      if (response.ok) {
-        this.loggedIn = true;
-        console.log("Logged In:" + this.fcmTokenToSave);
-        if (this.fcmTokenToSave != null) {
-          this._registerFCM();
+    if (this.userId != null) {
+      console.log("UserId:" + String(this.userId));
+      //"/users/<user_id>/provider-agent/"
+      const url = API_URL + this.userId + "/provider-agent/"
+      fetch(url, this._getHeaders()).then(function (response) {
+        if (response.ok) {
+          console.log("Logged in");
+          this.loggedIn = true;
+          if (this.fcmTokenToSave != null) {
+            this._registerFCM();
+          }
+        } else {
+          console.log(JSON.stringify(response));
         }
-      } else {
-        console.log(JSON.stringify(response));
-      }
-      window.showStatus();
-    }.bind(this)).catch(function (err) {
-      console.log(err);
-      this.loggedIn = false;
-    });
+        window.showStatus();
+      }.bind(this)).catch(function (err) {
+        console.log(err);
+        this.loggedIn = false;
+      });
+    }
   }
+
   updateFCM(token) {
-    console.log("In UpdateFCM:" + this.loggedIn );
+    this.currentFcmToken = token;
     if (this.loggedIn) {
       this._registerFCM();
     } else {
@@ -206,18 +262,17 @@ export class AuthComponent {
 
   }
   onOAuthBtnClick() {
-    console.log("In btn click");
+    this.fcmTokenToSave = this.currentFcmToken;
     OAuth2Client.authenticate(
       oauth2Options
     ).then(async response => {
       this.accessToken = response["access_token"]; // storage recommended for android logout
       this.refreshToken = response["refresh_token"];
-
+      console.log("RefreshTokenReceived:" + this.refreshToken);
       // only if you include a resourceUrl protected user values are included in the response!
       this.userId = response["user_id"];
-      console.log("UserId:" + this.userId);
-      await Storage.setAccessToken(this.accessToken);
-      await Storage.setRefreshToken(this.refreshToken);
+      await Storage.setAccessToken(this.userId.toString(),this.accessToken);
+      await Storage.setRefreshToken(this.userId.toString(),this.refreshToken);
       await Storage.setUserId(this.userId.toString());
       window.auth.checkLoggedIn();
 
@@ -240,8 +295,8 @@ export class AuthComponent {
       this.accessToken = response["access_token"]; // storage recommended for android logout
       // Don't forget to store the new refresh token as well!
       this.refreshToken = response["refresh_token"];
-      Storage.setAccessToken(this.accessToken);
-      Storage.setRefreshToken(this.refreshToken);
+      Storage.setAccessToken(this.userId.toString(),this.accessToken);
+      Storage.setRefreshToken(this.userId.toString(),this.refreshToken);
 
       // Go to backend
     }).catch(reason => {
@@ -250,13 +305,20 @@ export class AuthComponent {
   }
 
   async onLogoutClick() {
-    Storage.removeAllTokens().then(() => { window.showLogin(); });
+    Storage.logoutUser().then(() => { window.showLogin(); });
+    //Storage.removeAllTokens().then(() => { window.showLogin(); });
+
+  }
+  async onResetClick() {
+    Storage.clear().then(() => { window.showLogin(); });
+    //Storage.removeAllTokens().then(() => { window.showLogin(); });
 
   }
 }
 export const auth = new AuthComponent();
 document.getElementById("authButton").addEventListener("click", auth.onOAuthBtnClick);
 document.getElementById("logoutButton").addEventListener("click", auth.onLogoutClick);
+document.getElementById("resetButton").addEventListener("click", auth.onResetClick);
 
 
 window.auth = auth;

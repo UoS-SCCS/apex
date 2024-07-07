@@ -45,7 +45,6 @@ function initPushNotifications() {
     (notification) => {
       //alert('Push received: ' + JSON.stringify(notification));
       var data =notification["data"];
-      console.log("Push Received:" + JSON.stringify(notification));
       providerAgent.processMessage(data);
     }
   );

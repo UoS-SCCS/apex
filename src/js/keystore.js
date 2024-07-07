@@ -20,7 +20,6 @@ export class KeyStore {
         this.setPrivateKey = this.setPrivateKey.bind(this)*/
         this.store = this.store.bind(this);
         this.initialised = false;
-        console.log("here");
     }
     async clear(){
         await SecureStoragePlugin.clear();
@@ -29,7 +28,6 @@ export class KeyStore {
         try {
             var ks_data =await SecureStoragePlugin.get({ "key": "keystore" });
             this._ks = JSON.parse(ks_data["value"]);
-            console.log("Keystore:" + ks_data["value"]);
             this.initialised = true;
             return;
         } catch (error) {
@@ -71,7 +69,6 @@ export class KeyStore {
     async getEncPrivateKey(name) {
         if (name in this._ks) {
             const encodedKey = JSON.parse(this._ks[name]["privateKey"]);
-            console.log(JSON.stringify(encodedKey));
             const privateKey = await window.crypto.subtle.importKey("jwk", encodedKey, RSA, true, ["decrypt", "unwrapKey"]);
             return privateKey;
         }
@@ -80,7 +77,6 @@ export class KeyStore {
     async getEncPublicKey(name) {
         if (name in this._ks) {
             const encodedKey = JSON.parse(this._ks[name]["publicKey"]);
-            console.log(JSON.stringify(encodedKey));
             const publicKey = await window.crypto.subtle.importKey("jwk", encodedKey, RSA, true, ["encrypt", "wrapKey"]);
             return publicKey;
         }
@@ -129,7 +125,7 @@ export class KeyStore {
         return this._ks["publicKeySignature"];
     }
     store() {
-        SecureStoragePlugin.set({ "key":"keystore", "value":JSON.stringify(this._ks) }).then(success => console.log(success));
+        SecureStoragePlugin.set({ "key":"keystore", "value":JSON.stringify(this._ks) }).then(success => console.log("Updated KeyStore:" + String(success)));
         //window.localStorage.setItem("keystore",);
     }
 }
