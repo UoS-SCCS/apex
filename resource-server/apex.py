@@ -141,7 +141,7 @@ def promise_ca():
             response["promiseId"] = promise_id
             data_to_send = "data:" + json.dumps(response) + "\n\n"
             yield data_to_send
-            time.sleep(0.1)
+            time.sleep(0.05)
 
     return Response(
         stream_with_context(generate(promise_id)), mimetype="text/event-stream"

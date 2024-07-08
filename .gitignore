@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+#data and config
+apex-dev-b8f38-firebase-adminsdk-2k86m-1860cc628e.json
+/client-server/_user_files/
+/client-server/data/
+/localCA/
+/remote/
+/resource-server/_apex_files/
+/resource-server/_user_files/
+/resource-server/data/
