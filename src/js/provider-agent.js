@@ -37,6 +37,8 @@ function _arrayBufferToBase64(buffer) {
 function b642ab(base64_string){
     return Uint8Array.from(window.atob(base64_string), c => c.charCodeAt(0));
 }
+var startTime =0;
+var endTime=0;
 export class ProviderAgent {
 
 
@@ -46,6 +48,7 @@ export class ProviderAgent {
     currentURLHost = null;
     keystore = keyStore;
     uid = null;
+    
     constructor() {
 
 
@@ -160,6 +163,7 @@ export class ProviderAgent {
 
 
     retrieve(data) {
+        startTime = performance.now();
         document.getElementById("retrieveBlock").classList.remove("hidden-elem");
         var reWrappedResourceKey = null;
 
@@ -181,6 +185,8 @@ export class ProviderAgent {
             }.bind(this))
             .then((response) => response.json())
             .then((serverData) => {
+                endTime = performance.now();
+                console.log("Time:" + String((endTime - startTime)));
                 if (serverData["status"] == "fulfilled") {
                     //Show some UI
                     /**const promiseId = data["promise_id"];
@@ -203,6 +209,7 @@ export class ProviderAgent {
     }
 
     save(data) {
+        startTime = performance.now();
         document.getElementById("saveBlock").classList.remove("hidden-elem");
 
         var promiseData = {}
@@ -336,6 +343,8 @@ export class ProviderAgent {
                 return response.text();
             })
             .then((serverData) => {
+                endTime = performance.now();
+                console.log("Time:" + String((endTime - startTime)));
                 if (serverData["status"] == "fulfilled") {
 
                     /**const promiseId = data["promise_id"];
