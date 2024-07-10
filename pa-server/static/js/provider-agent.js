@@ -5,7 +5,7 @@ window.onload = async function () {
     userId = await initProviderAgent();
     keystore = new KeyStore(userId);
     if (!keystore.isInitialised()) {
-        generateKeys();
+        await generateKeys();
     }
     const current_URL = new URL(window.location.href);
     if (current_URL.searchParams.has("jsonData")) {
@@ -495,6 +495,7 @@ async function verifyClientHmac(result) {
         privateKey,
         enc.encode(jsonStr)
     ).then(signature => {
+        console.log("Saving client public key:" + JSON.stringify(receivedKey));
         keystore.setClientPublicKey(currentURLHost, receivedKey);
         sendSignatureToServer(currentURLHost, signature);
     });

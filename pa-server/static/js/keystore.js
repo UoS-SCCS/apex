@@ -26,6 +26,7 @@ class KeyStore {
         return this.initialised;
     }
     setClientPublicKey(clientHost,publicKey){
+        console.log("Setting client public key:" + clientHost + ":" + publicKey);
         if(!("clientPublicKeys" in this._ks)){
             this._ks["clientPublicKeys"]={};
         }
