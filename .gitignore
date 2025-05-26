@@ -138,3 +138,11 @@ apex-dev-b8f38-firebase-adminsdk-2k86m-1860cc628e.json
 /resource-server/_apex_files/
 /resource-server/_user_files/
 /resource-server/data/
+.idea/
+node_modules/
+.vscode/
+*.map
+.DS_Store
+.sourcemaps
+dist/
+resources/android/**/*

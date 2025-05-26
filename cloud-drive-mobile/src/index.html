@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cloud Drive - Provider Agent</title>
+    <meta
+      name="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <script
+      type="module"
+      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.js"
+    ></script>
+
+    <link rel="icon" type="image/x-icon" href="./assets/icon/favicon.ico" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/bulma.min.css" />
+    <link rel="stylesheet" href="./css/all.min.css" />
+  </head>
+  <body onload="">
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+      <div class="navbar-item">Cloud Drive - Provider Agent</div>
+    </nav>
+    <section id="init" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <div class="is-size-3">Initialising...</div>
+            <div class="fa-3x">
+              <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section id="login" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <div>
+              <button class="button is-info is-large" id="authButton">Login with OAuth</button>
+            </div>
+            <div style="margin-top:5px">
+            <button class="button is-info is-large" id="resetButton">Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="status" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <div class="is-size-3">Provider Agent Running</div>
+            <button class="button is-info is-large" id="logoutButton">Logout</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="verifyUrlBlock" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <p>The following Client is requesting access to your MyDrive service:</p>
+            <div class="verify-url" id="verifyUrl"></div>
+            <p>Click Authorize to continue or Deny to cancel</p>
+            <button id="verifyDeny" class="button is-info is-large">Deny</button>    
+            <button id="verifyAuthorize" class="button is-info is-large">Authorize</button>    
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="OTPBlock" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <p>Please enter the OTP provided by the Client:</p>
+            <input type="text" class="input is-large otp-entry" id="OTP">
+            <button id="otpBtn" class="button is-block is-info is-large is-fullwidth">Continue</button>  
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="saveBlock" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <p>Saving Data</p>
+            <i class="fa-solid fa-spinner fa-spin-pulse large-spinner"></i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="retrieveBlock" class="hero is-primary is-fullheight slidable">
+      <div class="hero-body has-text-centered">
+        <div class="container is-fluid">               
+          <div class="column is-4 is-offset-4 has-text-centered ">
+            <p>Retrieving Data</p>
+            <div class="spinner-div">
+            <i class="fa-solid fa-spinner fa-spin-pulse large-spinner"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    
+ 
+  
+  
+
+
+
+
+
+    <!--<pa-intro class="is-hidden"></pa-intro>
+    <pa-login class=""></pa-login>
+    <pa-status class="is-hidden"></pa-status>-->
+    <!--<button id="authButton" >Login with OAuth</button>
+    <button onclick="window.auth.onOAuthRefreshBtnClick()">Refresh token</button>
+    <button onclick="window.auth.onLogoutClick()">Logout OAuth</button>-->
+    <script src="./js/ui.js" type="module"></script>
+    <script src="./js/oauth-client.js" type="module"></script>
+    <script src="./js/push.js" type="module"></script>
+  </body>
+</html>

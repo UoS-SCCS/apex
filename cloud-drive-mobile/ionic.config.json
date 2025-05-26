@@ -1,0 +1,7 @@
+{
+  "name": "cloud-drive-agent",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "custom"
+}
