@@ -118,7 +118,7 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+# /site
 
 # mypy
 .mypy_cache/
@@ -129,20 +129,21 @@ dmypy.json
 .pyre/
 
 
-#data and config
-apex-dev-b8f38-firebase-adminsdk-2k86m-1860cc628e.json
-/client-server/_user_files/
-/client-server/data/
-/localCA/
-/remote/
-/resource-server/_apex_files/
-/resource-server/_user_files/
-/resource-server/data/
+######################################################
+
+*-firebase-adminsdk-*.json
+dist/
 .idea/
 node_modules/
 .vscode/
 *.map
-.DS_Store
 .sourcemaps
-dist/
+.DS_Store
 resources/android/**/*
+
+/demo/logs/
+/demo/cloud-notes/_user_files/
+/demo/cloud-notes/data/
+/demo/cloud-drive-web/web-app/_apex_files/
+/demo/cloud-drive-web/web-app/_user_files/
+/demo/cloud-drive-web/web-app/data/
