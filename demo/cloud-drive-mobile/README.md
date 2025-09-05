@@ -1,4 +1,6 @@
-_This repo is part of the_ **APEX research project**: _a framework to enable selective sharing of a user's encrypted data with third-party applications.&nbsp; [→&nbsp;Learn&nbsp;more](https://github.com/apex-authz/info)_
+[APEX Repo](../..) ⟩ [Demo](..) ⟩ Cloud Drive Mobile
+
+_This directory is part of the_ **APEX research project**: _a framework to enable selective sharing of a user's encrypted data with third-party applications.&nbsp; [→&nbsp;Learn&nbsp;more](https://uos-sccs.github.io/apex)_
 <hr><br>
 
 # Cloud Drive Mobile (APEX Demo)
@@ -12,7 +14,7 @@ The app serves as a demonstration of the APEX protocols working in a cross-devic
 
 The app has been implemented as a web application running in a native wrapper using the [Capacitor](https://capacitorjs.com/) cross-platform development framework. However, it has only been tested to run on Android.
 
-_The files in this repo may be used under the terms of the_ **Apache License, Version 2.0**_.&nbsp; [→&nbsp;Read&nbsp;license&nbsp;text](https://github.com/apex-authz/cloud-drive-mobile/blob/main/LICENSE)_
+_Cloud Drive Mobile may be used under the terms of the_ **Apache License, Version 2.0**_.&nbsp; [→&nbsp;Read&nbsp;license&nbsp;text](../LICENSE)_
 <br><br>
 
 ## How to Build and Run Cloud Drive Mobile
@@ -32,8 +34,8 @@ You will need the following software to build and run the app:
 First, obtain a copy of this repo and install the necessary dependencies:
 
 ```
-git clone git@github.com:apex-authz/cloud-drive-mobile.git
-cd cloud-drive-mobile
+git clone git@github.com:uos-sccs/apex.git
+cd apex/demo/cloud-drive-mobile
 npm install
 ```
 
@@ -75,10 +77,10 @@ If asked to **choose a target device**, select the device with Android 11.0 or g
 
 ### Step 4: Configure Firebase Cloud Messaging (FCM)
 
-The [demo server](https://github.com/apex-authz/web-demo) uses [Firebase Cloud Messaging (FCM)](https://github.com/apex-authz/info) to deliver push notifications to the mobile app. You will need to create a new Firebase project from the [Firebase Console](https://console.firebase.google.com/) using your Google account. Then... **[TODO: ADD FURTHER INSTRUCTIONS...]**
+The [demo server](../cloud-drive-web) uses [Firebase Cloud Messaging (FCM)](https://github.com/apex-authz/info) to deliver push notifications to the mobile app. You will need to create a new Firebase project from the [Firebase Console](https://console.firebase.google.com/) using your Google account. Then... **[TODO: ADD FURTHER INSTRUCTIONS...]**
 
 
-## Contributing
+## Making Changes
 
 To make changes to the source code, simply open the project directory in your editor of choice (e.g., VS Code). Don't make your changes in Android Studio directly.
 
