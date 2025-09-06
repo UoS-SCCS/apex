@@ -1,4 +1,4 @@
-[APEX Repo](../..) ⟩ [Demo](..)
+[APEX Repo](../../..) ⟩ Demo
 
 _This directory is part of the_ **APEX research project**: _a framework to enable selective sharing of a user's encrypted data with third-party applications.&nbsp; [→&nbsp;Learn&nbsp;more](https://uos-sccs.github.io/apex)_
 <hr><br>
@@ -12,6 +12,12 @@ We have provided a proof-of-concept implementation of the APEX protocol suite to
 - [**Cloud Notes** web app](cloud-notes)
 
 For more details, refer to §4 of [our paper](https://uos-sccs.github.io/apex).
+
+> [!WARNING]
+> This source code is provided **for demonstration purposes only** and is **not intended for production use**.
+
+_The APEX demo may be used under the terms of the_ **Apache License, Version 2.0**_.&nbsp; [→&nbsp;Read&nbsp;license&nbsp;text](LICENSE)_
+<br><br>
 
 
 ## How to Run the Cloud Drive and Cloud Notes Web Applications
@@ -149,7 +155,7 @@ This demonstrates a note being created with OAuth 2.0 extended with APEX.
 
 ## Testing Cross-Device Resource Access
 
-To try out cross-device encrypted resource access, build and run the **Cloud Drive** mobile app. Refer to [these instructions](cloud-drive-mobile).
+To try out cross-device encrypted resource access, build and run the **Cloud Drive** mobile app. Refer to [these instructions](cloud-drive-mobile#how-to-build-and-run-cloud-drive-mobile).
 
 
 ## Troubleshooting

@@ -1,4 +1,4 @@
-[APEX Repo](../..) ⟩ [Demo](..) ⟩ Cloud Drive Mobile
+[APEX Repo](../../..) ⟩ [Demo](..) ⟩ Cloud Drive Mobile
 
 _This directory is part of the_ **APEX research project**: _a framework to enable selective sharing of a user's encrypted data with third-party applications.&nbsp; [→&nbsp;Learn&nbsp;more](https://uos-sccs.github.io/apex)_
 <hr><br>

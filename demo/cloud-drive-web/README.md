@@ -1,4 +1,4 @@
-[APEX Repo](../..) ⟩ [Demo](..) ⟩ Cloud Drive Web
+[APEX Repo](../../..) ⟩ [Demo](..) ⟩ Cloud Drive Web
 
 _This directory is part of the_ **APEX research project**: _a framework to enable selective sharing of a user's encrypted data with third-party applications.&nbsp; [→&nbsp;Learn&nbsp;more](https://uos-sccs.github.io/apex)_
 <hr><br>
@@ -17,4 +17,4 @@ _Cloud Drive Web may be used under the terms of the_ **Apache License, Version 2
 
 ## How to Run Cloud Drive Web
 
-To run Cloud Drive and Cloud Notes together, see [these instructions](..).
+To run Cloud Drive and Cloud Notes together, see [these instructions](../#how-to-run-the-cloud-drive-and-cloud-notes-web-applications).
