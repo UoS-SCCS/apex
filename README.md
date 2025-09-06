@@ -12,4 +12,4 @@ _Authored by Jean Snyman, Chris Culnane, Ioana Boureanu and David Gerault_
 - [See our **presentation** at AsiaCSS '25](https://uos-sccs.github.io/apex/) 🎤
 - [Read our **research paper**](https://dl.acm.org/doi/10.1145/3708821.3736217) 📖
 - [See full **security proofs**](https://github.com/uos-sccs/apex/raw/refs/heads/main/paper/asiaccs25-118-extended.pdf) 📝
-- [Download and run our **example applications**](tree/main/demo) 💻
+- [Download and run our **example applications**](demo) 💻
