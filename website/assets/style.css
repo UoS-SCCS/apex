@@ -131,11 +131,23 @@ a:link, a:visited {
 
 .intro .cta {
   text-align: center;
-  margin: 1rem 0 4rem 0;
+  margin: calc(1rem - 15px) 0 calc(4rem - 15px) 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.intro .cta .btn + .btn {
-  margin-left: 20px;
+.btn-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin: 15px;
+}
+
+.btn-wrapper > span {
+  font-size: 1rem;
+  font-style: italic;
+  margin-top: 10px;
+  opacity: 0.5;
 }
 
 .intro ul {
